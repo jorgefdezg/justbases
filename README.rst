@@ -57,3 +57,12 @@ Downstream packagers, if incorporating testing into their packaging, are
 encouraged to use only the tests in the test_deterministic module, to
 avoid testing failures that may arise due to the non-deterministic behavior
 of Hypothesis tests.
+
+
+Tests
+-----
+If you want to run pypbt tests, you have to install pypbt with:
+```
+pip install pypbt
+```
+
