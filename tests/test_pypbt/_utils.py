@@ -28,12 +28,21 @@ from pypbt import domain
 
 # isort: LOCAL
 from justbases import BaseConfig, DisplayConfig, Radix, StripConfig
+from typing import Iterator
 
+class Radix_domain(domain.DomainAbs):
+    def __init__(self, base: int, max_len: int):
+        self.base = base
+        self.max_len = max_len
+    def __iter__(self) -> Iterator:
+        base = self.base
+        max_len = self.max_len
+        while True:
+            yield build_radix(base,max_len)
+    
 
-def build_nat(base,max_len):
-    nats = domain.List(domain.Int(max_value = base -1),min_len = 1, max_len = max_len)
-    print(nats)
-    return nats
+def is_zero(value):
+    return value == 0
 
 
 def build_base(max_base):
@@ -42,7 +51,7 @@ def build_base(max_base):
 
     :param int max_base: the maximum base
     """
-    ints = domain.Int(max_value = (max_base-2) +1)
+    ints = (domain.Int(min_value = 2, max_value = max_base))
     return ints
 
 
@@ -52,12 +61,11 @@ def build_sign():
     Build a sign value.
     """
 
-    ints = (domain.Int(max_value = (2))-1)
+    ints = (domain.Int(min_value = -1, max_value = 1))
     return ints
 
 
 build_relation = build_sign
-
 
 
 def build_radix(base,max_len):
@@ -65,9 +73,10 @@ def build_radix(base,max_len):
     Build a radix from base.
 
     :param int base: the base of the radix"""
-    list1 = build_nat(base,max_len)
-    list2 = build_nat(base,max_len)
-    list3 = build_nat(base,max_len) 
+    nats = domain.List(domain.Int(min_value = 1,max_value = base -1),min_len = 1, max_len = max_len)
+    list1 = next(iter(nats))
+    list2 = next(iter(nats))
+    list3 = next(iter(nats))
     if list1 == [] and list2 == [] and list3 == []:
         return Radix(0, list1, list2, list3, base)
     return Radix(
@@ -76,6 +85,7 @@ def build_radix(base,max_len):
         list2,
         list3,
         base,)
+    
 
 def build_display_config(base_config, digits_config, strip_config):
     """

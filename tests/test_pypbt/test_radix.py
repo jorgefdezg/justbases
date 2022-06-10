@@ -22,27 +22,23 @@
 import unittest
 from fractions import Fraction
 from os import sys
-
+import random
 # isort: THIRDPARTY
 
 # isort: LOCAL
 from justbases import Rationals, RoundingMethods
 
 # isort considers this third party, but it is not
-from tests.test_pypbt._utils import build_base, build_radix  # isort:skip
-from pypbt.quantifier import forall
+from tests.test_pypbt._utils import Radix_domain,build_base  # isort:skip
+from pypbt.quantifier import forall,exists
 from pypbt import domain
-
-
-if sys.gettrace() is not None:
-    settings.load_profile("tracing")
 
 
 class RadixTestCase(unittest.TestCase):
     """Tests for radix."""
 
-    @forall(radix = build_radix(16,3),n_samples = 1)
-    @forall(base = build_base(16),n_samples = 1)
+    @forall(radix = Radix_domain(16,3),n_samples = 5)
+    @forall(base = build_base(16),n_samples = 5)
     def test_in_base(self, radix, base):
         """
         Test that roundtrip is identity modulo number of 0s in
@@ -53,46 +49,45 @@ class RadixTestCase(unittest.TestCase):
         self.assertEqual(result.integer_part, radix.integer_part)
         self.assertEqual(result.repeating_part, radix.repeating_part)
         self.assertEqual(result.base, radix.base)
-
         length = len(result.non_repeating_part)
         self.assertEqual(result.non_repeating_part, radix.non_repeating_part[:length])
         self.assertTrue(all(x == 0 for x in radix.non_repeating_part[length:]))
 
-
-    @forall(radix = build_radix(36,10),n_samples = 2)
+"""
+    @forall(radix = build_radix(36,10),n_samples = 10)
     def test_str(self, radix):
-        """
-        Check basic properties of __str__.
-        """
+        
+        #Check basic properties of __str__.
+        
         result = str(radix)
         self.assertEqual(result.startswith("-"), (radix.sign == -1))
 
 
-    @forall(radix = build_radix(1024,10),n_samples= 2)
+    @forall(radix = build_radix(1024,10),n_samples= 10)
     def test_repr(self, radix):
-        """
-        Make sure that result is evalable.
-        """
+
+        #Make sure that result is evalable.
+
         # pylint: disable=import-outside-toplevel, unused-import
         # isort: LOCAL
         from justbases import Radix
 
         self.assertEqual(eval(repr(radix)), radix)  # pylint: disable=eval-used
 
-""" 
+
 class RoundingTestCase(unittest.TestCase):
     #Tests for rounding Radixes
 
     @forall(radix = build_radix(16,10),n_samples = 2)
-    @forall(precision = filter(lambda i: 0 >= i > 65, domain.Int()))
-    @forall(method= domain.List(RoundingMethods.METHODS()))
+    @forall(precision = domain.Int(min_value=0, max_value=64))
+    @exists(method= domain.domain(RoundingMethods.METHODS(), finite= True))
     def test_round_fraction(self, radix, precision, method):
 
         #Test that rounding yields the correct number of digits.
         #Test that rounded values are in a good range.
 
         value = radix.as_rational()
-        (result, relation) = radix.rounded(precision, method)
+        (result, relation) = radix.rounded(precision, random.choice(method))
         self.assertEqual(len(result.non_repeating_part), precision)
 
         ulp = Fraction(1, radix.base**precision)
@@ -108,7 +103,7 @@ class RoundingTestCase(unittest.TestCase):
             self.assertEqual(relation, 0)
 
     @forall(radix = build_radix(16,10),n_samples = 2)
-    @forall(precision = filter(lambda i: 0 >= i > 65, domain.Int()), n_samples = 2)
+    @forall(precision = domain.Int(min_value=0, max_value=64))
     def test_round_relation(self, radix, precision):
 
         #Test that all results have the correct relation.
@@ -160,4 +155,4 @@ class RoundingTestCase(unittest.TestCase):
         result1 = Rationals.round_to_int(radix.as_rational(), method)
         result2 = radix.as_int(method)
         self.assertEqual(result1, result2)
- """
+"""
