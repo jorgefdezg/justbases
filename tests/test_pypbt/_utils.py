@@ -19,7 +19,9 @@
 """ Test utilities. """
 
 # isort: STDLIB
+from fractions import Fraction
 import itertools
+import string
 
 import random
 
@@ -30,20 +32,30 @@ from pypbt import domain
 from justbases import BaseConfig, DisplayConfig, Radix, StripConfig
 from typing import Iterator
 
-class Radix_domain(domain.DomainAbs):
-    def __init__(self, base: int, max_len: int):
+class RadixDomain(domain.DomainAbs):
+    def __init__(self, base: int, max_len : int):
         self.base = base
         self.max_len = max_len
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[Radix]:
         base = self.base
         max_len = self.max_len
+        nats = domain.List(domain.Int(min_value = 1,max_value = base -1),min_len = 0, max_len = max_len)
+        iterator = iter(nats)
+        
         while True:
-            yield build_radix(base,max_len)
-    
+            list1 = next(iterator)
+            list2 = next(iterator)
+            list3 = next(iterator)
+            yield build_radix(base,list1,list2,list3)
 
-def is_zero(value):
-    return value == 0
-
+class DomainFraction(Domain):
+    def __init__(self, max_denominator: int):
+        self.max_denominator = max_denominator
+    def __iter__(self) -> Iterator[Fraction]:
+        denominator = iter(domain.Int(max_value = self.max_denominator))
+        numerator = iter(domain.Int())
+        while True:
+            yield Fraction(next(numerator),next(denominator))
 
 def build_base(max_base):
     """
@@ -68,19 +80,14 @@ def build_sign():
 build_relation = build_sign
 
 
-def build_radix(base,max_len):
+def build_radix(base,list1,list2,list3):
     """
     Build a radix from base.
 
     :param int base: the base of the radix"""
-    nats = domain.List(domain.Int(min_value = 1,max_value = base -1),min_len = 1, max_len = max_len)
-    list1 = next(iter(nats))
-    list2 = next(iter(nats))
-    list3 = next(iter(nats))
     if list1 == [] and list2 == [] and list3 == []:
         return Radix(0, list1, list2, list3, base)
-    return Radix(
-        random.randrange(-1,1,2),
+    return Radix(random.randrange(-1,1,2),
         list1,
         list2,
         list3,

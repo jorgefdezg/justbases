@@ -23,75 +23,70 @@ import unittest
 from os import sys
 
 # isort: THIRDPARTY
-from hypothesis import given, settings, strategies
-
+# isort:skip
+from pypbt.quantifier import forall,exists
+from pypbt import domain
 # isort: LOCAL
 from justbases import Nats
 
 # isort considers this third party, but it is not
-from tests.test_hypothesis._utils import build_nat  # isort:skip
+# isort:skip
 
-if sys.gettrace() is not None:
-    settings.load_profile("tracing")
+# _NATS_STRATEGY = strategies.integers(min_value=2).flatmap(
+#     lambda n: strategies.tuples(build_nat(n, 64), strategies.just(n))
+# )
+tc = unittest.TestCase()
 
-_NATS_STRATEGY = strategies.integers(min_value=2).flatmap(
-    lambda n: strategies.tuples(build_nat(n, 64), strategies.just(n))
-)
+@forall(value = domain.Int(min_value = 0))
+@forall(to_base = domain.Int(min_value = 2))
+def test_from_int(value, to_base):
+    """
+    convert_to_int(convert_from_int(value, to_base), 10) == value
+    No leading zeros in convert_from_int(value, to_base)
+    """
+    result = Nats.convert_from_int(value, to_base)
+    tc.assertNotEqual(result[:1], [0])
+    tc.assertEqual(Nats.convert_to_int(result, to_base), value)
 
-
-class NatsTestCase(unittest.TestCase):
-    """Tests for ints."""
-
-    @given(
-        strategies.integers(min_value=0),
-        strategies.integers(min_value=2),
-    )
-    def test_from_int(self, value, to_base):
-        """
-        convert_to_int(convert_from_int(value, to_base), 10) == value
-        No leading zeros in convert_from_int(value, to_base)
-        """
-        result = Nats.convert_from_int(value, to_base)
-        self.assertNotEqual(result[:1], [0])
-        self.assertEqual(Nats.convert_to_int(result, to_base), value)
-
-    @given(_NATS_STRATEGY, strategies.integers(min_value=2, max_value=64))
-    def test_from_other(self, nat, to_base):
-        """Test roundtrip from number in arbitrary base."""
-        (subject, from_base) = nat
-        result = Nats.convert(subject, from_base, to_base)
-        self.assertEqual(
-            Nats.convert_to_int(result, to_base),
-            Nats.convert_to_int(subject, from_base),
-        )
-
-    _CARRY_STRATEGY = strategies.integers(min_value=2).flatmap(
-        lambda n: strategies.tuples(
-            build_nat(n, 64),
-            strategies.integers(min_value=1, max_value=(n - 1)),
-            strategies.just(n),
-        )
+@forall(n = domain.Int(min_value = 2))
+@forall(nats = lambda n: domain.Tuple(domain.List(n,max_len=64),n))
+@forall(to_base = domain.Int(min_value = 2,max_value = 64))
+def test_from_other(n,nats, to_base):
+    """Test roundtrip from number in arbitrary base."""
+    (subject, from_base) = nats
+    result = Nats.convert(subject, from_base, to_base)
+    tc.assertEqual(
+        Nats.convert_to_int(result, to_base),
+        Nats.convert_to_int(subject, from_base),
     )
 
-    @given(_CARRY_STRATEGY)
-    def test_carry_in(self, strategy):
-        """
-        Test carry_in.
+# _CARRY_STRATEGY = strategies.integers(min_value=2).flatmap(
+#     lambda n: strategies.tuples(
+#         build_nat(n, 64),
+#         strategies.integers(min_value=1, max_value=(n - 1)),
+#         strategies.just(n),
+#     )
+# )
+@forall(n = domain.Int(min_value = 2))
+@forall(strategy = lambda n: domain.Tuple(domain.List(n,max_size = 64),domain.Int(min_value = 1,max_value = n-1),n))
+def test_carry_in(n,strategy):
+    
+    #Test carry_in.
 
-        :param strategy: the strategy (tuple of value, carry, base)
-        """
-        (value, carry, base) = strategy
-        (carry_out, result) = Nats.carry_in(value, carry, base)
-        self.assertEqual(len(result), len(value))
+    #:param strategy: the strategy (tuple of value, carry, base)
+    
+    (value, carry, base) = strategy
+    (carry_out, result) = Nats.carry_in(value, carry, base)
+    tc.assertEqual(len(result), len(value))
 
-        result2 = Nats.convert_from_int(Nats.convert_to_int(value, base) + carry, base)
+    result2 = Nats.convert_from_int(Nats.convert_to_int(value, base) + carry, base)
 
-        self.assertGreaterEqual(len(result2), len(result))
+    tc.assertGreaterEqual(len(result2), len(result))
 
-        self.assertTrue(
-            (len(result2) == len(result))
-            or result2[0] == carry_out
-            and result2[1:] == result
-        )
+    tc.assertTrue(
+        (len(result2) == len(result))
+        or result2[0] == carry_out
+        and result2[1:] == result
+    )
 
-        self.assertTrue(not (len(result2) == len(result)) or result2 == result)
+    tc.assertTrue(not (len(result2) == len(result)) or result2 == result)

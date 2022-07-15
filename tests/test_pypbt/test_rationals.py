@@ -24,151 +24,146 @@ from fractions import Fraction
 from os import sys
 
 # isort: THIRDPARTY
-from hypothesis import given, settings, strategies
-
+from _utils import FractionDomain  # isort:skip
+from pypbt.quantifier import forall,exists
+from pypbt import domain
 # isort: LOCAL
 from justbases import Radices, Rationals, RoundingMethods
 
-if sys.gettrace() is not None:
-    settings.load_profile("tracing")
+# if sys.gettrace() is not None:
+#     settings.load_profile("tracing")
 
 
-class RationalsTestCase(unittest.TestCase):
-    """Tests for rationals."""
+"""Tests for rationals."""
+tc = unittest.TestCase()
 
-    @given(
-        strategies.fractions().map(lambda x: x.limit_denominator(100)),
-        strategies.integers(min_value=2),
-    )
-    @settings(max_examples=50)
-    def test_inverses(self, value, to_base):
-        """
-        Test that functions are inverses of each other.
-        """
-        (result, relation) = Radices.from_rational(value, to_base)
-        self.assertTrue(result.sign in (0, 1) or value < 0)
-        self.assertEqual(relation, 0)
-        self.assertEqual(result.as_rational(), value)
+@forall(fraction = FractionDomain(100),n_samples = 5)
+@forall(to_base = domain.Int(min_value=2),n_samples = 5)
+def test_inverses(fraction, to_base):
 
-    @given(
-        strategies.fractions().map(lambda x: x.limit_denominator(100)),
-        strategies.integers(min_value=2, max_value=64),
-        strategies.integers(min_value=0, max_value=64),
-        strategies.sampled_from(RoundingMethods.METHODS()),
-    )
-    @settings(max_examples=500)
-    def test_rounding_conversion(self, value, base, precision, method):
-        """
-        Test that converting and then rounding is the same as converting
-        with rounding.
-        """
-        (rounded, rel) = Radices.from_rational(value, base, precision, method)
-        (unrounded, urel) = Radices.from_rational(value, base)
+    #Test that functions are inverses of each other.
 
-        self.assertEqual(urel, 0)
+    (result, relation) = Radices.from_rational(fraction, to_base)
+    tc.assertTrue(result.sign in (0, 1) or fraction < 0)
+    tc.assertEqual(relation, 0)
+    tc.assertEqual(result.as_rational(), fraction)
 
-        (frounded, frel) = unrounded.rounded(precision, method)
+@forall(fraction = FractionDomain(100),n_samples = 5)
+@forall(base = domain.Int(min_value=2, max_value=64),n_samples = 5)
+@forall(precision = domain.Int(min_value=0, max_value=64),n_samples = 5)
+@exists(method= domain.domain(RoundingMethods.METHODS(), finite= True))
+def test_rounding_conversion(fraction, base, precision, method):
+    
+    #Test that converting and then rounding is the same as converting
+    #with rounding.
+    
+    (rounded, rel) = Radices.from_rational(fraction, base, precision, method)
+    (unrounded, urel) = Radices.from_rational(fraction, base)
 
-        self.assertEqual(frounded, rounded)
-        self.assertEqual(rel, frel)
+    tc.assertEqual(urel, 0)
 
-        rounded_value = rounded.as_rational()
+    (frounded, frel) = unrounded.rounded(precision, method)
 
-        if rounded_value > value:
-            self.assertEqual(rel, 1)
-        elif rounded_value < value:
-            self.assertEqual(rel, -1)
-        else:
-            self.assertEqual(rel, 0)
+    tc.assertEqual(frounded, rounded)
+    tc.assertEqual(rel, frel)
 
-    @given(strategies.fractions(), strategies.sampled_from(RoundingMethods.METHODS()))
-    @settings(max_examples=50)
-    def test_rounding(self, value, method):
-        """
-        Test rounding to int.
-        """
-        (result, _) = Rationals.round_to_int(value, method)
-        self.assertIsInstance(result, int)
+    rounded_value = rounded.as_rational()
 
-        (lower, upper) = (result - 1, result + 1)
-        self.assertTrue((lower <= value <= result) or (result <= value <= upper))
+    if rounded_value > fraction:
+        tc.assertEqual(rel, 1)
+    elif rounded_value < fraction:
+        tc.assertEqual(rel, -1)
+    else:
+        tc.assertEqual(rel, 0)
 
-    @given(strategies.integers(min_value=1, max_value=9))
-    @settings(max_examples=20)
-    def test_rounding_precise(self, numerator):
-        """
-        Test with predicted value.
-        """
-        # pylint: disable=too-many-statements
-        value = Fraction(numerator, 10)
-        (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_DOWN)
-        self.assertEqual(result, 0)
-        self.assertEqual(rel, -1)
 
-        (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_DOWN)
-        self.assertEqual(result, -1)
-        self.assertEqual(rel, -1)
+@forall(fraction = FractionDomain(100),n_samples = 5)
+@exists(method= domain.domain(RoundingMethods.METHODS(), finite= True))
+def test_rounding(fraction, method):
+    
+    #Test rounding to int.
+    
+    (result, _) = Rationals.round_to_int(fraction, method)
+    tc.assertIsInstance(result, int)
 
-        (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_UP)
-        self.assertEqual(result, 1)
-        self.assertEqual(rel, 1)
+    (lower, upper) = (result - 1, result + 1)
+    tc.assertTrue((lower <= fraction <= result) or (result <= fraction <= upper))
 
-        (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_UP)
-        self.assertEqual(result, 0)
-        self.assertEqual(rel, 1)
+@forall(numerator = domain.Int(min_value=1, max_value=9),n_samples = 5)
+def test_rounding_precise(numerator):
+    
+    #Test with predicted value.
+    
+    # pylint: disable=too-many-statements
+    value = Fraction(numerator, 10)
+    (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_DOWN)
+    tc.assertEqual(result, 0)
+    tc.assertEqual(rel, -1)
 
-        (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_TO_ZERO)
-        self.assertEqual(result, 0)
-        self.assertEqual(rel, -1)
+    (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_DOWN)
+    tc.assertEqual(result, -1)
+    tc.assertEqual(rel, -1)
 
-        (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_TO_ZERO)
-        self.assertEqual(result, 0)
-        self.assertEqual(rel, 1)
+    (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_UP)
+    tc.assertEqual(result, 1)
+    tc.assertEqual(rel, 1)
 
-        (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_HALF_UP)
-        if numerator < 5:
-            self.assertEqual(result, 0)
-            self.assertEqual(rel, -1)
-        else:
-            self.assertEqual(result, 1)
-            self.assertEqual(rel, 1)
+    (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_UP)
+    tc.assertEqual(result, 0)
+    tc.assertEqual(rel, 1)
 
-        (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_HALF_UP)
-        if numerator <= 5:
-            self.assertEqual(result, 0)
-            self.assertEqual(rel, 1)
-        else:
-            self.assertEqual(result, -1)
-            self.assertEqual(rel, -1)
+    (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_TO_ZERO)
+    tc.assertEqual(result, 0)
+    tc.assertEqual(rel, -1)
 
-        (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_HALF_DOWN)
-        if numerator > 5:
-            self.assertEqual(result, 1)
-            self.assertEqual(rel, 1)
-        else:
-            self.assertEqual(result, 0)
-            self.assertEqual(rel, -1)
+    (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_TO_ZERO)
+    tc.assertEqual(result, 0)
+    tc.assertEqual(rel, 1)
 
-        (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_HALF_DOWN)
-        if numerator >= 5:
-            self.assertEqual(result, -1)
-            self.assertEqual(rel, -1)
-        else:
-            self.assertEqual(result, 0)
-            self.assertEqual(rel, 1)
+    (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_HALF_UP)
+    if numerator < 5:
+        tc.assertEqual(result, 0)
+        tc.assertEqual(rel, -1)
+    else:
+        tc.assertEqual(result, 1)
+        tc.assertEqual(rel, 1)
 
-        (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_HALF_ZERO)
-        if numerator > 5:
-            self.assertEqual(result, 1)
-            self.assertEqual(rel, 1)
-        else:
-            self.assertEqual(result, 0)
-            self.assertEqual(rel, -1)
+    (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_HALF_UP)
+    if numerator <= 5:
+        tc.assertEqual(result, 0)
+        tc.assertEqual(rel, 1)
+    else:
+        tc.assertEqual(result, -1)
+        tc.assertEqual(rel, -1)
 
-        (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_HALF_ZERO)
-        if numerator > 5:
-            self.assertEqual(result, -1)
-            self.assertEqual(rel, -1)
-        else:
-            self.assertEqual(result, 0)
-            self.assertEqual(rel, 1)
+    (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_HALF_DOWN)
+    if numerator > 5:
+        tc.assertEqual(result, 1)
+        tc.assertEqual(rel, 1)
+    else:
+        tc.assertEqual(result, 0)
+        tc.assertEqual(rel, -1)
+
+    (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_HALF_DOWN)
+    if numerator >= 5:
+        tc.assertEqual(result, -1)
+        tc.assertEqual(rel, -1)
+    else:
+        tc.assertEqual(result, 0)
+        tc.assertEqual(rel, 1)
+
+    (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_HALF_ZERO)
+    if numerator > 5:
+        tc.assertEqual(result, 1)
+        tc.assertEqual(rel, 1)
+    else:
+        tc.assertEqual(result, 0)
+        tc.assertEqual(rel, -1)
+
+    (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_HALF_ZERO)
+    if numerator > 5:
+        tc.assertEqual(result, -1)
+        tc.assertEqual(rel, -1)
+    else:
+        tc.assertEqual(result, 0)
+        tc.assertEqual(rel, 1)

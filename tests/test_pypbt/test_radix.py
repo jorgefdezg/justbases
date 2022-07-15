@@ -29,130 +29,121 @@ import random
 from justbases import Rationals, RoundingMethods
 
 # isort considers this third party, but it is not
-from tests.test_pypbt._utils import Radix_domain,build_base  # isort:skip
+from _utils import RadixDomain, build_base  # isort:skip
 from pypbt.quantifier import forall,exists
 from pypbt import domain
 
+tc = unittest.TestCase()
+@forall(radix = RadixDomain(16,3),n_samples = 5)
+@forall(base = build_base(16),n_samples = 5)
+def test_in_base(radix, base):
+    """
+    Test that roundtrip is identity modulo number of 0s in
+    non repeating part.
+    """
+    result = radix.in_base(base).in_base(radix.base)
+    tc.assertEqual(result.sign, radix.sign)
+    tc.assertEqual(result.integer_part, radix.integer_part)
+    tc.assertEqual(result.repeating_part, radix.repeating_part)
+    tc.assertEqual(result.base, radix.base)
 
-class RadixTestCase(unittest.TestCase):
-    """Tests for radix."""
-
-    @forall(radix = Radix_domain(16,3),n_samples = 5)
-    @forall(base = build_base(16),n_samples = 5)
-    def test_in_base(self, radix, base):
-        """
-        Test that roundtrip is identity modulo number of 0s in
-        non repeating part.
-        """
-        result = radix.in_base(base).in_base(radix.base)
-        self.assertEqual(result.sign, radix.sign)
-        self.assertEqual(result.integer_part, radix.integer_part)
-        self.assertEqual(result.repeating_part, radix.repeating_part)
-        self.assertEqual(result.base, radix.base)
-        length = len(result.non_repeating_part)
-        self.assertEqual(result.non_repeating_part, radix.non_repeating_part[:length])
-        self.assertTrue(all(x == 0 for x in radix.non_repeating_part[length:]))
-
-"""
-    @forall(radix = build_radix(36,10),n_samples = 10)
-    def test_str(self, radix):
-        
-        #Check basic properties of __str__.
-        
-        result = str(radix)
-        self.assertEqual(result.startswith("-"), (radix.sign == -1))
+    length = len(result.non_repeating_part)
+    tc.assertEqual(result.non_repeating_part, radix.non_repeating_part[:length])
+    tc.assertTrue(all(x == 0 for x in radix.non_repeating_part[length:]))
 
 
-    @forall(radix = build_radix(1024,10),n_samples= 10)
-    def test_repr(self, radix):
+@forall(radix = RadixDomain(36,10),n_samples = 10)
+def test_str(radix):
+    
+    #Check basic properties of __str__.
+    
+    result = str(radix)
+    tc.assertEqual(result.startswith("-"), (radix.sign == -1))
 
-        #Make sure that result is evalable.
+@forall(radix = RadixDomain(1024,10),n_samples= 10)
+def test_repr(radix):
 
-        # pylint: disable=import-outside-toplevel, unused-import
-        # isort: LOCAL
-        from justbases import Radix
+    #Make sure that result is evalable.
 
-        self.assertEqual(eval(repr(radix)), radix)  # pylint: disable=eval-used
+    # pylint: disable=import-outside-toplevel, unused-import
+    # isort: LOCAL
+    tc.assertEqual(eval(repr(radix)), radix)# pylint: disable=eval-used
 
+#Tests for rounding Radixes
 
-class RoundingTestCase(unittest.TestCase):
-    #Tests for rounding Radixes
+@forall(radix = RadixDomain(16,10),n_samples = 2)
+@forall(precision = domain.Int(min_value=0, max_value=64))
+@exists(method= domain.domain(RoundingMethods.METHODS(), finite= True))
+def test_round_fraction(radix, precision, method):
 
-    @forall(radix = build_radix(16,10),n_samples = 2)
-    @forall(precision = domain.Int(min_value=0, max_value=64))
-    @exists(method= domain.domain(RoundingMethods.METHODS(), finite= True))
-    def test_round_fraction(self, radix, precision, method):
+    #Test that rounding yields the correct number of digits.
+    #Test that rounded values are in a good range.
 
-        #Test that rounding yields the correct number of digits.
-        #Test that rounded values are in a good range.
+    value = radix.as_rational()
+    (result, relation) = radix.rounded(precision, method)
+    tc.assertEqual(len(result.non_repeating_part), precision)
 
-        value = radix.as_rational()
-        (result, relation) = radix.rounded(precision, random.choice(method))
-        self.assertEqual(len(result.non_repeating_part), precision)
+    ulp = Fraction(1, radix.base**precision)
+    rational_result = result.as_rational()
+    tc.assertLessEqual(value - ulp, rational_result)
+    tc.assertGreaterEqual(value + ulp, rational_result)
 
-        ulp = Fraction(1, radix.base**precision)
-        rational_result = result.as_rational()
-        self.assertLessEqual(value - ulp, rational_result)
-        self.assertGreaterEqual(value + ulp, rational_result)
+    if rational_result > value:
+        tc.assertEqual(relation, 1)
+    elif rational_result < value:
+        tc.assertEqual(relation, -1)
+    else:
+        tc.assertEqual(relation, 0)
 
-        if rational_result > value:
-            self.assertEqual(relation, 1)
-        elif rational_result < value:
-            self.assertEqual(relation, -1)
-        else:
-            self.assertEqual(relation, 0)
+@forall(radix = RadixDomain(16,10),n_samples = 2)
+@forall(precision = domain.Int(min_value=0, max_value=64))
+def test_round_relation(radix, precision):
 
-    @forall(radix = build_radix(16,10),n_samples = 2)
-    @forall(precision = domain.Int(min_value=0, max_value=64))
-    def test_round_relation(self, radix, precision):
+    #Test that all results have the correct relation.
 
-        #Test that all results have the correct relation.
+    results = dict(
+        (method, radix.rounded(precision, method)[0])
+        for method in RoundingMethods.METHODS()
+    )
 
-        results = dict(
-            (method, radix.rounded(precision, method)[0])
-            for method in RoundingMethods.METHODS()
+    for _, result in results.items():
+        tc.assertEqual(len(result.non_repeating_part), precision)
+
+    if radix.sign in (0, 1):
+        tc.assertEqual(
+            results[RoundingMethods.ROUND_DOWN],
+            results[RoundingMethods.ROUND_TO_ZERO],
+        )
+        tc.assertEqual(
+            results[RoundingMethods.ROUND_HALF_DOWN],
+            results[RoundingMethods.ROUND_HALF_ZERO],
+        )
+    else:
+        tc.assertEqual(
+            results[RoundingMethods.ROUND_UP],
+            results[RoundingMethods.ROUND_TO_ZERO],
+        )
+        tc.assertEqual(
+            results[RoundingMethods.ROUND_HALF_UP],
+            results[RoundingMethods.ROUND_HALF_ZERO],
         )
 
-        for _, result in results.items():
-            self.assertEqual(len(result.non_repeating_part), precision)
+    order = [
+        RoundingMethods.ROUND_UP,
+        RoundingMethods.ROUND_HALF_UP,
+        RoundingMethods.ROUND_HALF_DOWN,
+        RoundingMethods.ROUND_DOWN,
+    ]
+    for index in range(len(order) - 1):
+        tc.assertGreaterEqual(
+            results[order[index]].as_rational(),
+            results[order[index + 1]].as_rational(),
+        )
+@forall(radix = RadixDomain(16,10),n_samples = 2)
+@exists(method= domain.domain(RoundingMethods.METHODS(), finite= True))
+def test_as_int(tc, radix, method):
+    #Test equivalence with two paths.
 
-        if radix.sign in (0, 1):
-            self.assertEqual(
-                results[RoundingMethods.ROUND_DOWN],
-                results[RoundingMethods.ROUND_TO_ZERO],
-            )
-            self.assertEqual(
-                results[RoundingMethods.ROUND_HALF_DOWN],
-                results[RoundingMethods.ROUND_HALF_ZERO],
-            )
-        else:
-            self.assertEqual(
-                results[RoundingMethods.ROUND_UP],
-                results[RoundingMethods.ROUND_TO_ZERO],
-            )
-            self.assertEqual(
-                results[RoundingMethods.ROUND_HALF_UP],
-                results[RoundingMethods.ROUND_HALF_ZERO],
-            )
-
-        order = [
-            RoundingMethods.ROUND_UP,
-            RoundingMethods.ROUND_HALF_UP,
-            RoundingMethods.ROUND_HALF_DOWN,
-            RoundingMethods.ROUND_DOWN,
-        ]
-        for index in range(len(order) - 1):
-            self.assertGreaterEqual(
-                results[order[index]].as_rational(),
-                results[order[index + 1]].as_rational(),
-            )
-
-    @forall(radix = build_radix(16,10),n_samples = 2)
-    @forall(method= domain.List(RoundingMethods.METHODS()), n_samples = 2)
-    def test_as_int(self, radix, method):
-        #Test equivalence with two paths.
-
-        result1 = Rationals.round_to_int(radix.as_rational(), method)
-        result2 = radix.as_int(method)
-        self.assertEqual(result1, result2)
-"""
+    result1 = Rationals.round_to_int(radix.as_rational(), method)
+    result2 = radix.as_int(method)
+    tc.assertEqual(result1, result2)
