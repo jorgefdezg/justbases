@@ -24,8 +24,8 @@ from os import sys
 
 # isort: THIRDPARTY
 # isort:skip
-from pypbt.quantifier import forall,exists
-from pypbt import domain
+from pypbt.quantifiers import forall,exists
+from pypbt import domains
 # isort: LOCAL
 from justbases import Nats
 
@@ -37,8 +37,8 @@ from justbases import Nats
 # )
 tc = unittest.TestCase()
 
-@forall(value = domain.Int(min_value = 0))
-@forall(to_base = domain.Int(min_value = 2))
+@forall(value = domains.Int(min_value = 0))
+@forall(to_base = domains.Int(min_value = 2))
 def test_from_int(value, to_base):
     """
     convert_to_int(convert_from_int(value, to_base), 10) == value
@@ -48,9 +48,9 @@ def test_from_int(value, to_base):
     tc.assertNotEqual(result[:1], [0])
     tc.assertEqual(Nats.convert_to_int(result, to_base), value)
 
-@forall(n = domain.Int(min_value = 2))
-@forall(nats = lambda n: domain.Tuple(domain.List(n,max_len=64),n))
-@forall(to_base = domain.Int(min_value = 2,max_value = 64))
+@forall(n = domains.Int(min_value = 2))
+@forall(nats = lambda n: domains.Tuple(domains.List(n,max_len=64),n))
+@forall(to_base = domains.Int(min_value = 2,max_value = 64))
 def test_from_other(n,nats, to_base):
     """Test roundtrip from number in arbitrary base."""
     (subject, from_base) = nats
@@ -67,8 +67,8 @@ def test_from_other(n,nats, to_base):
 #         strategies.just(n),
 #     )
 # )
-@forall(n = domain.Int(min_value = 2))
-@forall(strategy = lambda n: domain.Tuple(domain.List(n,max_size = 64),domain.Int(min_value = 1,max_value = n-1),n))
+@forall(n = domains.Int(min_value = 2))
+@forall(strategy = lambda n: domains.Tuple(domains.List(n,max_len = 64),domains.Int(min_value = 1,max_value = n-1),n))
 def test_carry_in(n,strategy):
     
     #Test carry_in.

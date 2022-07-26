@@ -29,12 +29,12 @@ import random
 from justbases import Rationals, RoundingMethods
 
 # isort considers this third party, but it is not
-from _utils import RadixDomain, build_base  # isort:skip
-from pypbt.quantifier import forall,exists
-from pypbt import domain
+from _utils import build_base, build_radix # isort:skip
+from pypbt.quantifiers import forall,exists
+from pypbt import domains
 
 tc = unittest.TestCase()
-@forall(radix = RadixDomain(16,3),n_samples = 5)
+@forall(radix = build_radix(16,3),n_samples = 5)
 @forall(base = build_base(16),n_samples = 5)
 def test_in_base(radix, base):
     """
@@ -52,7 +52,7 @@ def test_in_base(radix, base):
     tc.assertTrue(all(x == 0 for x in radix.non_repeating_part[length:]))
 
 
-@forall(radix = RadixDomain(36,10),n_samples = 10)
+@forall(radix = build_radix(36,10),n_samples = 10)
 def test_str(radix):
     
     #Check basic properties of __str__.
@@ -60,20 +60,21 @@ def test_str(radix):
     result = str(radix)
     tc.assertEqual(result.startswith("-"), (radix.sign == -1))
 
-@forall(radix = RadixDomain(1024,10),n_samples= 10)
+@forall(radix = build_radix(32,10),n_samples= 10)
 def test_repr(radix):
 
     #Make sure that result is evalable.
 
     # pylint: disable=import-outside-toplevel, unused-import
     # isort: LOCAL
+    from justbases import Radix
     tc.assertEqual(eval(repr(radix)), radix)# pylint: disable=eval-used
 
 #Tests for rounding Radixes
 
-@forall(radix = RadixDomain(16,10),n_samples = 2)
-@forall(precision = domain.Int(min_value=0, max_value=64))
-@exists(method= domain.domain(RoundingMethods.METHODS(), finite= True))
+@forall(radix = build_radix(16,10),n_samples = 2)
+@forall(precision = domains.Int(min_value=0, max_value=64))
+@exists(method= domains.DomainFromIterable(RoundingMethods.METHODS(),True))
 def test_round_fraction(radix, precision, method):
 
     #Test that rounding yields the correct number of digits.
@@ -95,8 +96,8 @@ def test_round_fraction(radix, precision, method):
     else:
         tc.assertEqual(relation, 0)
 
-@forall(radix = RadixDomain(16,10),n_samples = 2)
-@forall(precision = domain.Int(min_value=0, max_value=64))
+@forall(radix = build_radix(16,10),n_samples = 2)
+@forall(precision = domains.Int(min_value=0, max_value=64))
 def test_round_relation(radix, precision):
 
     #Test that all results have the correct relation.
@@ -139,8 +140,8 @@ def test_round_relation(radix, precision):
             results[order[index]].as_rational(),
             results[order[index + 1]].as_rational(),
         )
-@forall(radix = RadixDomain(16,10),n_samples = 2)
-@exists(method= domain.domain(RoundingMethods.METHODS(), finite= True))
+@forall(radix = build_radix(16,10),n_samples = 2)
+@exists(method= domains.DomainFromIterable(RoundingMethods.METHODS(),True))
 def test_as_int(tc, radix, method):
     #Test equivalence with two paths.
 

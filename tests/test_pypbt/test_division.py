@@ -24,14 +24,13 @@ import unittest
 from os import sys
 
 # isort: THIRDPARTY
-from pypbt.quantifier import forall
-from pypbt import domain
+from pypbt.quantifiers import forall
+from pypbt import domains
 
 # isort: LOCAL
 from justbases import NatDivision, Nats, RoundingMethods
 
 # isort considers this third party, but it is not
-from _utils import RadixDomain  # isort:skip
 
 tc = unittest.TestCase()
 
@@ -43,8 +42,8 @@ tc = unittest.TestCase()
 #         strategies.just(n),
 #     )
 # )
-@forall(n = domain.Int(min_value = 2, max_value = 17))
-@forall(strategy = lambda n: domain.Tuple(domain.List(n,min_len = 1,max_len=4),domain.List(n,max_len=4),n,),n_samples=50)
+@forall(n = domains.Int(min_value = 2, max_value = 17))
+@forall(strategy = lambda n: domains.Tuple(domains.List(n,min_len = 1,max_len=4),domains.List(n,max_len=4),n,),n_samples=50)
 def test_inverses(n,strategy):
     """
     Test that division and undivision are inverses.
@@ -74,9 +73,9 @@ def test_inverses(n,strategy):
 
     tc.assertEqual(original, result)
 
-@forall(n = domain.Int(min_value = 2, max_value = 17))
-@forall(strategy = lambda n: domain.Tuple(domain.List(n,min_len = 1,max_len=4),domain.List(n,max_len=4),n,),n_samples=50)
-@forall(precision =domain.Int(min_value = 0, max_value = 32),n_samples=50)
+@forall(n = domains.Int(min_value = 2, max_value = 17))
+@forall(strategy = lambda n: domains.Tuple(domains.List(n,min_len = 1,max_len=4),domains.List(n,max_len=4),n,),n_samples=50)
+@forall(precision =domains.Int(min_value = 0, max_value = 32),n_samples=50)
 def test_truncation(n,strategy, precision):
     """
     Test just truncating division result to some precision.
@@ -117,10 +116,10 @@ def test_truncation(n,strategy, precision):
         )
     )
 
-@forall(divisor = domain.Int(min_value=1,max_value=2**16))
-@forall(dividend = domain.Int(min_value=0,max_value=2**64))
-@forall(base = domain.Int(min_value=3))
-@forall(precision = domain.Int(min_value=0,max_value=32))
+@forall(divisor = domains.Int(min_value=1,max_value=2**16))
+@forall(dividend = domains.Int(min_value=0,max_value=2**64))
+@forall(base = domains.Int(min_value=3))
+@forall(precision = domains.Int(min_value=0,max_value=32))
 #@example(200, 10, 10, 1)
 def test_up_down(divisor, dividend, base, precision):
     """

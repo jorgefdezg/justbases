@@ -24,9 +24,8 @@ from fractions import Fraction
 from os import sys
 
 # isort: THIRDPARTY
-from _utils import FractionDomain  # isort:skip
-from pypbt.quantifier import forall,exists
-from pypbt import domain
+from pypbt.quantifiers import forall,exists
+from pypbt import domains
 # isort: LOCAL
 from justbases import Radices, Rationals, RoundingMethods
 
@@ -37,8 +36,8 @@ from justbases import Radices, Rationals, RoundingMethods
 """Tests for rationals."""
 tc = unittest.TestCase()
 
-@forall(fraction = FractionDomain(100),n_samples = 5)
-@forall(to_base = domain.Int(min_value=2),n_samples = 5)
+@forall(fraction = domains.DomainPyObject(Fraction, numerator = domains.Int(), denominator = domains.Int(min_value = 1,max_value = 100)),n_samples = 5)
+@forall(to_base = domains.Int(min_value=2),n_samples = 5)
 def test_inverses(fraction, to_base):
 
     #Test that functions are inverses of each other.
@@ -48,10 +47,10 @@ def test_inverses(fraction, to_base):
     tc.assertEqual(relation, 0)
     tc.assertEqual(result.as_rational(), fraction)
 
-@forall(fraction = FractionDomain(100),n_samples = 5)
-@forall(base = domain.Int(min_value=2, max_value=64),n_samples = 5)
-@forall(precision = domain.Int(min_value=0, max_value=64),n_samples = 5)
-@exists(method= domain.domain(RoundingMethods.METHODS(), finite= True))
+@forall(fraction = domains.DomainPyObject(Fraction, numerator = domains.Int(), denominator = domains.Int(min_value = 1,max_value = 100)),n_samples = 5)
+@forall(base = domains.Int(min_value=2, max_value=64),n_samples = 5)
+@forall(precision = domains.Int(min_value=0, max_value=64),n_samples = 5)
+@exists(method= domains.DomainFromIterable(RoundingMethods.METHODS(),True))
 def test_rounding_conversion(fraction, base, precision, method):
     
     #Test that converting and then rounding is the same as converting
@@ -77,8 +76,8 @@ def test_rounding_conversion(fraction, base, precision, method):
         tc.assertEqual(rel, 0)
 
 
-@forall(fraction = FractionDomain(100),n_samples = 5)
-@exists(method= domain.domain(RoundingMethods.METHODS(), finite= True))
+@forall(fraction = domains.DomainPyObject(Fraction, numerator = domains.Int(), denominator = domains.Int(min_value = 1,max_value = 100)),n_samples = 5)
+@exists(method= domains.DomainFromIterable(RoundingMethods.METHODS(),True))
 def test_rounding(fraction, method):
     
     #Test rounding to int.
@@ -89,7 +88,7 @@ def test_rounding(fraction, method):
     (lower, upper) = (result - 1, result + 1)
     tc.assertTrue((lower <= fraction <= result) or (result <= fraction <= upper))
 
-@forall(numerator = domain.Int(min_value=1, max_value=9),n_samples = 5)
+@forall(numerator = domains.Int(min_value=1, max_value=9),n_samples = 5)
 def test_rounding_precise(numerator):
     
     #Test with predicted value.

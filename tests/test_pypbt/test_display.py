@@ -22,105 +22,78 @@
 import unittest
 
 # isort: THIRDPARTY
-from hypothesis import given, settings, strategies
-
+from pypbt.quantifiers import forall,exists
+from pypbt import domains
 # isort: LOCAL
 from justbases import BaseConfig, DigitsConfig, StripConfig
 from justbases._display import Number, String, Strip
 
 # isort considers this third party, but it is not
-from tests.test_hypothesis._utils import (  # isort:skip
-    build_base,
-    build_base_config,
-    build_display_config,
-    build_nat,
-    build_radix,
-    build_relation,
-    build_sign,
-    build_strip_config,
-)
+from _utils import build_base, build_base_config, build_display_config, build_radix, build_relation, build_sign, build_strip_config
 
+tc = unittest.TestCase()
 
-class TestString(unittest.TestCase):
+@forall(radix = build_radix(20,10))
+@forall(display = build_display_config(BaseConfig(),DigitsConfig(use_letters=False),build_strip_config))
+@forall(relation = build_relation())
+def test_format(radix, display, relation):
     """
-    Test display of Radix given display configuration.
+    Verify that a xformed string with a repeating part shows that part.
     """
-
-    @given(
-        build_radix(1024, 10),
-        build_display_config(
-            strategies.just(BaseConfig()),
-            strategies.just(DigitsConfig(use_letters=False)),
-            build_strip_config(),
-        ),
-        build_relation(),
+    print(display)
+    result = String(display, radix.base).xform(radix, relation)
+    tc.assertEqual(
+        radix.repeating_part != [] and not display.base_config.use_subscript,
+        result[-1] == ")",
     )
-    @settings(max_examples=100)
-    def test_format(self, radix, display, relation):
-        """
-        Verify that a xformed string with a repeating part shows that part.
-        """
-        result = String(display, radix.base).xform(radix, relation)
-        self.assertEqual(
-            radix.repeating_part != [] and not display.base_config.use_subscript,
-            result[-1] == ")",
-        )
 
 
-class TestNumber(unittest.TestCase):
+"""
+Test Number.
+"""
+
+@forall(integer_part = domains.String(max_len = 10),n_samples = 5)
+@forall(non_repeating_part = domains.String(min_len = 1,max_len = 10),n_samples = 5)
+@forall(repeating_part = domains.String(max_len = 10),n_samples = 5)
+@forall(config = build_base_config(),n_samples = 5)
+@forall(base = build_base(16),n_samples = 5)
+@forall(sign = build_sign(),n_samples = 5)
+def test_xform(
+    integer_part, non_repeating_part, repeating_part, config, base, sign
+):
     """
-    Test Number.
+    Test xform.
     """
+    # pylint: disable=too-many-arguments
 
-    @given(
-        strategies.text(alphabet=strategies.characters(), max_size=10),
-        strategies.text(alphabet=strategies.characters(), min_size=1, max_size=10),
-        strategies.text(alphabet=strategies.characters(), max_size=10),
-        build_base_config(),
-        build_base(16),
-        build_sign(),
+    result = Number(config, base).xform(
+        integer_part, non_repeating_part, repeating_part, base, sign
     )
-    @settings(max_examples=100)
-    def test_xform(
-        self, integer_part, non_repeating_part, repeating_part, config, base, sign
-    ):
-        """
-        Test xform.
-        """
-        # pylint: disable=too-many-arguments
-
-        result = Number(config, base).xform(
-            integer_part, non_repeating_part, repeating_part, base, sign
-        )
-        if config.use_prefix and base == 16 and sign != -1:
-            self.assertTrue(result.startswith("0x"))
-        if config.use_prefix and base == 8 and sign != -1:
-            self.assertTrue(result.startswith("0"))
-        if config.use_subscript:
-            base_str = str(base)
-            self.assertEqual(result.rfind(base_str) + len(base_str), len(result))
+    if config.use_prefix and base == 16 and sign != -1:
+        tc.assertTrue(result.startswith("0x"))
+    if config.use_prefix and base == 8 and sign != -1:
+        tc.assertTrue(result.startswith("0"))
+    if config.use_subscript:
+        base_str = str(base)
+        tc.assertEqual(result.rfind(base_str) + len(base_str), len(result))
 
 
-class TestStrip(unittest.TestCase):
+"""
+Test Strip.
+"""
+
+@forall(number = domains.List(domains.Int(min_value = 0, max_value = 9),min_len = 1, max_len = 3),n_samples = 2)
+@forall(config = build_strip_config(),n_samples = 2)
+@forall(relation = build_relation(),n_samples = 2)
+@forall(base = build_base(16),n_samples = 2)
+def test_xform(number, config, relation, base):
     """
-    Test Strip.
+    Confirm that option strip strips more than other options.
     """
+    result = Strip(config, base).xform(number, relation)
+    most = Strip(StripConfig(strip=True), base).xform(number, relation)
 
-    @given(
-        build_nat(10, 3),
-        build_strip_config(),
-        build_relation(),
-        build_base(16),
-    )
-    @settings(max_examples=100)
-    def test_xform(self, number, config, relation, base):
-        """
-        Confirm that option strip strips more than other options.
-        """
-        result = Strip(config, base).xform(number, relation)
-        most = Strip(StripConfig(strip=True), base).xform(number, relation)
+    tc.assertTrue(len(most) <= len(result))
 
-        self.assertTrue(len(most) <= len(result))
-
-        if config.strip and number != []:
-            self.assertTrue(result[-1] != 0)
+    if config.strip and number != []:
+        tc.assertTrue(result[-1] != 0)
