@@ -32,31 +32,6 @@ from pypbt import domains
 from justbases import BaseConfig, DisplayConfig, Radix, StripConfig
 from typing import Iterator
 
-# class RadixDomain(domain.DomainAbs):
-#     def __init__(self, base: int, max_len : int):
-#         self.base = base
-#         self.max_len = max_len
-#     def __iter__(self) -> Iterator[Radix]:
-#         base = self.base
-#         max_len = self.max_len
-#         nats = domain.List(domain.Int(min_value = 1,max_value = base -1),min_len = 0, max_len = max_len)
-#         iterator = iter(nats)
-        
-#         while True:
-#             list1 = next(iterator)
-#             list2 = next(iterator)
-#             list3 = next(iterator)
-#             yield build_radix(base,list1,list2,list3)
-
-# class DomainFraction(Domain):
-#     def __init__(self, max_denominator: int):
-#         self.max_denominator = max_denominator
-#     def __iter__(self) -> Iterator[Fraction]:
-#         denominator = iter(domain.Int(max_value = self.max_denominator))
-#         numerator = iter(domain.Int())
-#         while True:
-#             yield Fraction(next(numerator),next(denominator))
-
 def build_base(max_base):
     """
     Builds a base.
@@ -86,13 +61,15 @@ def build_radix(max_base, max_len):
     :param int max_base: maximum value for a numeric base
     :param int max_len: the maximum length for the component lists
     """
-    base = build_base(max_base)
-    list1 = domains.List(domains.Int(min_value = 1,max_value = max_base -1),min_len = 0, max_len = max_len)
-    list2 = domains.List(domains.Int(min_value = 1,max_value = max_base -1),min_len = 0, max_len = max_len)
-    list3 = domains.List(domains.Int(min_value = 1,max_value = max_base -1),min_len = 0, max_len = max_len)
+    base_domain = build_base(max_base)
+    iterator = iter(base_domain)
+    base = next(iterator)
+    list1 = domains.List(domains.Int(min_value = 1,max_value = base-1),min_len = 0, max_len = max_len)
+    list2 = domains.List(domains.Int(min_value = 1,max_value = base-1),min_len = 0, max_len = max_len)
+    list3 = domains.List(domains.Int(min_value = 1,max_value = base-1),min_len = 0, max_len = max_len)
     if list1 == [] and list2 == [] and list3 == []:
-        return domains.DomainPyObject(Radix,0,list1,list2,list3,base)
-    return domains.DomainPyObject(Radix,random.randrange(-1,1,2),list1,list2,list3,base)
+        return domains.DomainPyObject(Radix,0,list1,list2,list3,base_domain)
+    return domains.DomainPyObject(Radix,random.randrange(-1,1,2),list1,list2,list3,base_domain)
 
 def build_display_config(base_config, digits_config, strip_config):
     """

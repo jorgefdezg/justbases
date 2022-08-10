@@ -19,7 +19,6 @@
 """ Test for utility functions. """
 
 # isort: STDLIB
-import unittest
 
 # isort: THIRDPARTY
 from pypbt.quantifiers import forall,exists
@@ -31,33 +30,28 @@ from justbases._display import Number, String, Strip
 # isort considers this third party, but it is not
 from _utils import build_base, build_base_config, build_display_config, build_radix, build_relation, build_sign, build_strip_config
 
-tc = unittest.TestCase()
 
-@forall(radix = build_radix(20,10))
-@forall(display = build_display_config(BaseConfig(),DigitsConfig(use_letters=False),build_strip_config))
-@forall(relation = build_relation())
+@forall(radix = build_radix(16,6),n_samples = 2)
+@forall(display = build_display_config(BaseConfig(),DigitsConfig(use_letters=True),build_strip_config()),n_samples = 2)
+@forall(relation = build_relation(),n_samples = 2)
 def test_format(radix, display, relation):
     """
     Verify that a xformed string with a repeating part shows that part.
     """
-    print(display)
     result = String(display, radix.base).xform(radix, relation)
-    tc.assertEqual(
-        radix.repeating_part != [] and not display.base_config.use_subscript,
-        result[-1] == ")",
-    )
+    return (radix.repeating_part != [] and not display.base_config.use_subscript) == (result[-1] == ")")
 
 
 """
 Test Number.
 """
 
-@forall(integer_part = domains.String(max_len = 10),n_samples = 5)
-@forall(non_repeating_part = domains.String(min_len = 1,max_len = 10),n_samples = 5)
-@forall(repeating_part = domains.String(max_len = 10),n_samples = 5)
-@forall(config = build_base_config(),n_samples = 5)
-@forall(base = build_base(16),n_samples = 5)
-@forall(sign = build_sign(),n_samples = 5)
+@forall(integer_part = domains.String(max_len = 10),n_samples = 2)
+@forall(non_repeating_part = domains.String(min_len = 1,max_len = 10),n_samples = 2)
+@forall(repeating_part = domains.String(max_len = 10),n_samples = 2)
+@forall(config = build_base_config(),n_samples = 2)
+@forall(base = build_base(16),n_samples = 2)
+@forall(sign = build_sign(),n_samples = 2)
 def test_xform(
     integer_part, non_repeating_part, repeating_part, config, base, sign
 ):
@@ -70,12 +64,12 @@ def test_xform(
         integer_part, non_repeating_part, repeating_part, base, sign
     )
     if config.use_prefix and base == 16 and sign != -1:
-        tc.assertTrue(result.startswith("0x"))
+        return result.startswith("0x")
     if config.use_prefix and base == 8 and sign != -1:
-        tc.assertTrue(result.startswith("0"))
+        return result.startswith("0")
     if config.use_subscript:
         base_str = str(base)
-        tc.assertEqual(result.rfind(base_str) + len(base_str), len(result))
+        return (result.rfind(base_str) + len(base_str)) == len(result)
 
 
 """
@@ -86,14 +80,13 @@ Test Strip.
 @forall(config = build_strip_config(),n_samples = 2)
 @forall(relation = build_relation(),n_samples = 2)
 @forall(base = build_base(16),n_samples = 2)
-def test_xform(number, config, relation, base):
+def test_xform_strip(number, config, relation, base):
     """
     Confirm that option strip strips more than other options.
     """
     result = Strip(config, base).xform(number, relation)
     most = Strip(StripConfig(strip=True), base).xform(number, relation)
-
-    tc.assertTrue(len(most) <= len(result))
-
     if config.strip and number != []:
-        tc.assertTrue(result[-1] != 0)
+        return result[-1] != 0
+    return len(most) <= len(result)
+

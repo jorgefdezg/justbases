@@ -35,7 +35,7 @@ from justbases import Nats
 # _NATS_STRATEGY = strategies.integers(min_value=2).flatmap(
 #     lambda n: strategies.tuples(build_nat(n, 64), strategies.just(n))
 # )
-tc = unittest.TestCase()
+# tc = unittest.TestCase()
 
 @forall(value = domains.Int(min_value = 0))
 @forall(to_base = domains.Int(min_value = 2))
@@ -45,30 +45,38 @@ def test_from_int(value, to_base):
     No leading zeros in convert_from_int(value, to_base)
     """
     result = Nats.convert_from_int(value, to_base)
-    tc.assertNotEqual(result[:1], [0])
-    tc.assertEqual(Nats.convert_to_int(result, to_base), value)
+    if result[:1] == [0]:
+        return False
+    return Nats.convert_to_int(result, to_base) == value
 
 @forall(n = domains.Int(min_value = 2))
-@forall(nats = lambda n: domains.Tuple(domains.List(n,max_len=64),n))
+@forall(nats = lambda n: domains.Tuple(domains.List(domains.Int(max_value = n-1),max_len=64),n))
 @forall(to_base = domains.Int(min_value = 2,max_value = 64))
 def test_from_other(n,nats, to_base):
     """Test roundtrip from number in arbitrary base."""
     (subject, from_base) = nats
     result = Nats.convert(subject, from_base, to_base)
-    tc.assertEqual(
-        Nats.convert_to_int(result, to_base),
-        Nats.convert_to_int(subject, from_base),
-    )
+    return Nats.convert_to_int(result, to_base) == Nats.convert_to_int(subject, from_base)
 
-# _CARRY_STRATEGY = strategies.integers(min_value=2).flatmap(
-#     lambda n: strategies.tuples(
-#         build_nat(n, 64),
-#         strategies.integers(min_value=1, max_value=(n - 1)),
-#         strategies.just(n),
-#     )
-# )
 @forall(n = domains.Int(min_value = 2))
-@forall(strategy = lambda n: domains.Tuple(domains.List(n,max_len = 64),domains.Int(min_value = 1,max_value = n-1),n))
+@forall(strategy = lambda n: domains.Tuple(domains.List(domains.Int(max_value = n-1),max_len = 64),domains.Int(min_value = 1,max_value = n-1),n))
+def test_carry_in_len(n,strategy):
+    
+    #Test carry_in_len.
+
+    #:param strategy: the strategy (tuple of value, carry, base)
+    
+    (value, carry, base) = strategy
+    (carry_out, result) = Nats.carry_in(value, carry, base)
+    if len(result) != len(value):
+        return False
+    result2 = Nats.convert_from_int(Nats.convert_to_int(value, base) + carry, base)
+
+    return len(result2) >= len(result)
+
+
+@forall(n = domains.Int(min_value = 2))
+@forall(strategy = lambda n: domains.Tuple(domains.List(domains.Int(max_value = n-1),max_len = 63),domains.Int(min_value = 1,max_value = n-1),n))
 def test_carry_in(n,strategy):
     
     #Test carry_in.
@@ -77,16 +85,22 @@ def test_carry_in(n,strategy):
     
     (value, carry, base) = strategy
     (carry_out, result) = Nats.carry_in(value, carry, base)
-    tc.assertEqual(len(result), len(value))
 
     result2 = Nats.convert_from_int(Nats.convert_to_int(value, base) + carry, base)
 
-    tc.assertGreaterEqual(len(result2), len(result))
+    return (len(result2) == len(result)) or result2[0] == carry_out and result2[1:] == result
 
-    tc.assertTrue(
-        (len(result2) == len(result))
-        or result2[0] == carry_out
-        and result2[1:] == result
-    )
+@forall(n = domains.Int(min_value = 2))
+@forall(strategy = lambda n: domains.Tuple(domains.List(domains.Int(max_value = n-1),max_len = 64),domains.Int(min_value = 1,max_value = n-1),n))
+def test_carry_in_len2(n,strategy):
+    
+    #Test carry_in.
 
-    tc.assertTrue(not (len(result2) == len(result)) or result2 == result)
+    #:param strategy: the strategy (tuple of value, carry, base)
+    
+    (value, carry, base) = strategy
+    (carry_out, result) = Nats.carry_in(value, carry, base)
+
+    result2 = Nats.convert_from_int(Nats.convert_to_int(value, base) + carry, base)
+
+    return not (len(result2) == len(result)) or result2 == result
