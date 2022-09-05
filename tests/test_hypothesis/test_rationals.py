@@ -40,7 +40,7 @@ class RationalsTestCase(unittest.TestCase):
         strategies.fractions().map(lambda x: x.limit_denominator(100)),
         strategies.integers(min_value=2),
     )
-    @settings(max_examples=50)
+    @settings(max_examples=500)
     def test_inverses(self, value, to_base):
         """
         Test that functions are inverses of each other.
@@ -82,7 +82,7 @@ class RationalsTestCase(unittest.TestCase):
             self.assertEqual(rel, 0)
 
     @given(strategies.fractions(), strategies.sampled_from(RoundingMethods.METHODS()))
-    @settings(max_examples=50)
+    @settings(max_examples=500)
     def test_rounding(self, value, method):
         """
         Test rounding to int.
@@ -94,7 +94,7 @@ class RationalsTestCase(unittest.TestCase):
         self.assertTrue((lower <= value <= result) or (result <= value <= upper))
 
     @given(strategies.integers(min_value=1, max_value=9))
-    @settings(max_examples=20)
+    @settings(max_examples=500)
     def test_rounding_precise(self, numerator):
         """
         Test with predicted value.

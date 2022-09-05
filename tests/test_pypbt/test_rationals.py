@@ -35,8 +35,8 @@ from justbases import Radices, Rationals, RoundingMethods
 
 """Tests for rationals."""
 
-@forall(fraction = domains.DomainPyObject(Fraction, numerator = domains.Int(), denominator = domains.Int(min_value = 1,max_value = 100)),n_samples = 5)
-@forall(to_base = domains.Int(min_value=2),n_samples = 5)
+@forall(fraction = domains.DomainPyObject(Fraction, numerator = domains.Int(), denominator = domains.Int(min_value = 1,max_value = 100)),n_samples = 25)
+@forall(to_base = domains.Int(min_value=2),n_samples = 20)
 def test_inverses(fraction, to_base):
 
     #Test that functions are inverses of each other.
@@ -48,8 +48,8 @@ def test_inverses(fraction, to_base):
         return False
     return result.as_rational() == fraction
 
-@forall(fraction = domains.DomainPyObject(Fraction, numerator = domains.Int(), denominator = domains.Int(min_value = 1,max_value = 100)),n_samples = 5)
-@forall(base = domains.Int(min_value=2, max_value=64),n_samples = 5)
+@forall(fraction = domains.DomainPyObject(Fraction, numerator = domains.Int(), denominator = domains.Int(min_value = 1,max_value = 100)),n_samples = 10)
+@forall(base = domains.Int(min_value=2, max_value=64),n_samples = 10)
 @forall(precision = domains.Int(min_value=0, max_value=64),n_samples = 5)
 @exists(method= domains.DomainFromIterable(RoundingMethods.METHODS(),True))
 def test_rounding_conversion(fraction, base, precision, method):
@@ -79,7 +79,7 @@ def test_rounding_conversion(fraction, base, precision, method):
         return rel == 0
 
 
-@forall(fraction = domains.DomainPyObject(Fraction, numerator = domains.Int(), denominator = domains.Int(min_value = 1,max_value = 100)),n_samples = 10)
+@forall(fraction = domains.DomainPyObject(Fraction, numerator = domains.Int(), denominator = domains.Int(min_value = 1,max_value = 100)),n_samples = 500)
 @exists(method= domains.DomainFromIterable(RoundingMethods.METHODS(),True))
 def test_rounding(fraction, method):
     
@@ -92,7 +92,7 @@ def test_rounding(fraction, method):
     (lower, upper) = (result - 1, result + 1)
     return (lower <= fraction <= result) or (result <= fraction <= upper)
 
-@forall(numerator = domains.Int(min_value=1, max_value=9),n_samples = 50)
+@forall(numerator = domains.Int(min_value=1, max_value=9),n_samples = 500)
 def test_rounding_precise(numerator):
     
     #Test with predicted value.

@@ -32,13 +32,8 @@ from justbases import Nats
 # isort considers this third party, but it is not
 # isort:skip
 
-# _NATS_STRATEGY = strategies.integers(min_value=2).flatmap(
-#     lambda n: strategies.tuples(build_nat(n, 64), strategies.just(n))
-# )
-# tc = unittest.TestCase()
-
-@forall(value = domains.Int(min_value = 0))
-@forall(to_base = domains.Int(min_value = 2))
+@forall(value = domains.Int(min_value = 0),n_samples = 10)
+@forall(to_base = domains.Int(min_value = 2),n_samples = 10)
 def test_from_int(value, to_base):
     """
     convert_to_int(convert_from_int(value, to_base), 10) == value
@@ -49,56 +44,55 @@ def test_from_int(value, to_base):
         return False
     return Nats.convert_to_int(result, to_base) == value
 
-@forall(n = domains.Int(min_value = 2))
-@forall(nats = lambda n: domains.Tuple(domains.List(domains.Int(max_value = n-1),max_len=64),n))
-@forall(to_base = domains.Int(min_value = 2,max_value = 64))
+@forall(n = domains.Int(min_value = 2),n_samples = 5)
+@forall(nats = lambda n: domains.Tuple(domains.List(domains.Int(max_value = n-1),max_len=64),n),n_samples = 5)
+@forall(to_base = domains.Int(min_value = 2,max_value = 64),n_samples = 4)
 def test_from_other(n,nats, to_base):
     """Test roundtrip from number in arbitrary base."""
     (subject, from_base) = nats
     result = Nats.convert(subject, from_base, to_base)
     return Nats.convert_to_int(result, to_base) == Nats.convert_to_int(subject, from_base)
 
-@forall(n = domains.Int(min_value = 2))
-@forall(strategy = lambda n: domains.Tuple(domains.List(domains.Int(max_value = n-1),max_len = 64),domains.Int(min_value = 1,max_value = n-1),n))
-def test_carry_in_len(n,strategy):
+@forall(n = domains.Int(min_value = 2),n_samples = 10)
+@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),max_len = 5),domains.Int(min_value = 1,max_value = n-1),n),n_samples = 10)
+def test_carry_in_len(n,tupla):
     
     #Test carry_in_len.
 
-    #:param strategy: the strategy (tuple of value, carry, base)
+    #:param tupla: the tuple (tuple of value, carry, base)
     
-    (value, carry, base) = strategy
+    (value, carry, base) = tupla
     (carry_out, result) = Nats.carry_in(value, carry, base)
     if len(result) != len(value):
         return False
     result2 = Nats.convert_from_int(Nats.convert_to_int(value, base) + carry, base)
-
     return len(result2) >= len(result)
 
 
-@forall(n = domains.Int(min_value = 2))
-@forall(strategy = lambda n: domains.Tuple(domains.List(domains.Int(max_value = n-1),max_len = 63),domains.Int(min_value = 1,max_value = n-1),n))
-def test_carry_in(n,strategy):
+@forall(n = domains.Int(min_value = 2),n_samples = 10)
+@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),max_len = 63),domains.Int(min_value = 1,max_value = n-1),n),n_samples = 10)
+def test_carry_in(n,tupla):
     
     #Test carry_in.
 
-    #:param strategy: the strategy (tuple of value, carry, base)
+    #:param tupla: the tuple (tuple of value, carry, base)
     
-    (value, carry, base) = strategy
+    (value, carry, base) = tupla
     (carry_out, result) = Nats.carry_in(value, carry, base)
 
     result2 = Nats.convert_from_int(Nats.convert_to_int(value, base) + carry, base)
 
     return (len(result2) == len(result)) or result2[0] == carry_out and result2[1:] == result
 
-@forall(n = domains.Int(min_value = 2))
-@forall(strategy = lambda n: domains.Tuple(domains.List(domains.Int(max_value = n-1),max_len = 64),domains.Int(min_value = 1,max_value = n-1),n))
-def test_carry_in_len2(n,strategy):
+@forall(n = domains.Int(min_value = 2),n_samples = 10)
+@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),max_len = 64),domains.Int(min_value = 1,max_value = n-1),n),n_samples = 10)
+def test_carry_in_len2(n,tupla):
     
     #Test carry_in.
 
-    #:param strategy: the strategy (tuple of value, carry, base)
+    #:param tupla: the tuple (tuple of value, carry, base)
     
-    (value, carry, base) = strategy
+    (value, carry, base) = tupla
     (carry_out, result) = Nats.carry_in(value, carry, base)
 
     result2 = Nats.convert_from_int(Nats.convert_to_int(value, base) + carry, base)

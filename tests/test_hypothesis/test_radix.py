@@ -40,7 +40,7 @@ class RadixTestCase(unittest.TestCase):
     """Tests for radix."""
 
     @given(build_radix(16, 3), build_base(16))
-    @settings(max_examples=50, deadline=None)
+    @settings(max_examples=500, deadline=None)
     def test_in_base(self, radix, base):
         """
         Test that roundtrip is identity modulo number of 0s in
@@ -57,7 +57,7 @@ class RadixTestCase(unittest.TestCase):
         self.assertTrue(all(x == 0 for x in radix.non_repeating_part[length:]))
 
     @given(build_radix(36, 10))
-    @settings(max_examples=10)
+    @settings(max_examples=500)
     def test_str(self, radix):
         """
         Check basic properties of __str__.
@@ -66,7 +66,7 @@ class RadixTestCase(unittest.TestCase):
         self.assertEqual(result.startswith("-"), (radix.sign == -1))
 
     @given(build_radix(1024, 10))
-    @settings(max_examples=10)
+    @settings(max_examples=500)
     def test_repr(self, radix):
         """
         Make sure that result is evalable.
@@ -86,7 +86,7 @@ class RoundingTestCase(unittest.TestCase):
         strategies.integers(min_value=0, max_value=64),
         strategies.sampled_from(RoundingMethods.METHODS()),
     )
-    @settings(max_examples=50)
+    @settings(max_examples=500)
     def test_round_fraction(self, radix, precision, method):
         """
         Test that rounding yields the correct number of digits.
@@ -110,7 +110,7 @@ class RoundingTestCase(unittest.TestCase):
             self.assertEqual(relation, 0)
 
     @given(build_radix(16, 10), strategies.integers(min_value=0, max_value=64))
-    @settings(max_examples=50)
+    @settings(max_examples=500)
     def test_round_relation(self, radix, precision):
         """
         Test that all results have the correct relation.
@@ -155,7 +155,7 @@ class RoundingTestCase(unittest.TestCase):
             )
 
     @given(build_radix(64, 5), strategies.sampled_from(RoundingMethods.METHODS()))
-    @settings(max_examples=50)
+    @settings(max_examples=500)
     def test_as_int(self, radix, method):
         """
         Test equivalence with two paths.

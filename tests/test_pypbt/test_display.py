@@ -31,9 +31,9 @@ from justbases._display import Number, String, Strip
 from _utils import build_base, build_base_config, build_display_config, build_radix, build_relation, build_sign, build_strip_config
 
 
-@forall(radix = build_radix(16,6),n_samples = 2)
-@forall(display = build_display_config(BaseConfig(),DigitsConfig(use_letters=True),build_strip_config()),n_samples = 2)
-@forall(relation = build_relation(),n_samples = 2)
+@forall(radix = build_radix(1024,10),n_samples = 10)
+@forall(display = build_display_config(BaseConfig(),DigitsConfig(use_letters=False),build_strip_config()),n_samples = 10)
+@forall(relation = build_relation(),n_samples = 5)
 def test_format(radix, display, relation):
     """
     Verify that a xformed string with a repeating part shows that part.
@@ -46,17 +46,17 @@ def test_format(radix, display, relation):
 Test Number.
 """
 
-@forall(integer_part = domains.String(max_len = 10),n_samples = 2)
-@forall(non_repeating_part = domains.String(min_len = 1,max_len = 10),n_samples = 2)
+@forall(integer_part = domains.String(max_len = 10),n_samples = 3)
+@forall(non_repeating_part = domains.String(min_len = 1,max_len = 10),n_samples = 3)
 @forall(repeating_part = domains.String(max_len = 10),n_samples = 2)
-@forall(config = build_base_config(),n_samples = 2)
+@forall(config = build_base_config(),n_samples = 7)
 @forall(base = build_base(16),n_samples = 2)
 @forall(sign = build_sign(),n_samples = 2)
 def test_xform(
     integer_part, non_repeating_part, repeating_part, config, base, sign
 ):
     """
-    Test xform.
+    Test xform. if config is false, return True to pass to next execution
     """
     # pylint: disable=too-many-arguments
 
@@ -65,21 +65,22 @@ def test_xform(
     )
     if config.use_prefix and base == 16 and sign != -1:
         return result.startswith("0x")
-    if config.use_prefix and base == 8 and sign != -1:
+    elif config.use_prefix and base == 8 and sign != -1:
         return result.startswith("0")
     if config.use_subscript:
         base_str = str(base)
         return (result.rfind(base_str) + len(base_str)) == len(result)
+    else: return True
 
 
 """
 Test Strip.
 """
 
-@forall(number = domains.List(domains.Int(min_value = 0, max_value = 9),min_len = 1, max_len = 3),n_samples = 2)
-@forall(config = build_strip_config(),n_samples = 2)
-@forall(relation = build_relation(),n_samples = 2)
-@forall(base = build_base(16),n_samples = 2)
+@forall(number = domains.List(domains.Int(min_value = 1, max_value = 9),min_len = 1, max_len = 3),n_samples = 4)
+@forall(config = build_strip_config(),n_samples = 5)
+@forall(relation = build_relation(),n_samples = 5)
+@forall(base = build_base(16),n_samples = 5)
 def test_xform_strip(number, config, relation, base):
     """
     Confirm that option strip strips more than other options.

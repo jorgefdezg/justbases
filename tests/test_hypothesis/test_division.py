@@ -49,11 +49,13 @@ class NatDivisionTestCase(unittest.TestCase):
     """Tests for division."""
 
     @given(_DIVISION_STRATEGY)
-    @settings(max_examples=50, deadline=None)
+    @settings(max_examples=100, deadline=None)
+    @example(([0,5,6],[],12))
     def test_inverses(self, strategy):
         """
         Test that division and undivision are inverses.
         """
+        print(strategy)
         (divisor, dividend, base) = strategy
         (
             integer_part,
@@ -80,7 +82,7 @@ class NatDivisionTestCase(unittest.TestCase):
         self.assertEqual(original, result)
 
     @given(_DIVISION_STRATEGY, strategies.integers(min_value=0, max_value=32))
-    @settings(max_examples=50, deadline=None)
+    @settings(max_examples=100, deadline=None)
     def test_truncation(self, strategy, precision):
         """
         Test just truncating division result to some precision.
@@ -128,7 +130,7 @@ class NatDivisionTestCase(unittest.TestCase):
         strategies.integers(min_value=0, max_value=32),
     )
     @example(200, 10, 10, 1)
-    @settings(max_examples=50)
+    @settings(max_examples=100)
     def test_up_down(self, divisor, dividend, base, precision):
         """
         Test that rounding up and rounding down have the right relationship.

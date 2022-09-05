@@ -80,7 +80,7 @@ class TestNumber(unittest.TestCase):
         build_base(16),
         build_sign(),
     )
-    @settings(max_examples=100)
+    @settings(max_examples=504)
     def test_xform(
         self, integer_part, non_repeating_part, repeating_part, config, base, sign
     ):
@@ -112,7 +112,7 @@ class TestStrip(unittest.TestCase):
         build_relation(),
         build_base(16),
     )
-    @settings(max_examples=100)
+    @settings(max_examples=500)
     def test_xform(self, number, config, relation, base):
         """
         Confirm that option strip strips more than other options.
