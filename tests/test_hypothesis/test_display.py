@@ -55,7 +55,7 @@ class TestString(unittest.TestCase):
         ),
         build_relation(),
     )
-    @settings(max_examples=100)
+    @settings(max_examples=500)
     def test_format(self, radix, display, relation):
         """
         Verify that a xformed string with a repeating part shows that part.
