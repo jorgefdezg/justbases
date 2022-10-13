@@ -30,7 +30,13 @@ from hypothesis import given, settings, strategies
 from justbases import Rationals, RoundingMethods
 
 # isort considers this third party, but it is not
-from tests.test_hypothesis._utils import build_base, build_radix  # isort:skip
+
+#IMPORTS DEPENDING ON THE RUNNER
+# if you use pytest as runner
+#from tests.test_hypothesis._utils import build_base, build_radix
+
+# if you use pypbt runner
+from _utils import build_base, build_radix  
 
 if sys.gettrace() is not None:
     settings.load_profile("tracing")

@@ -79,24 +79,7 @@ def build_radix(max_base, max_len):
     base_iterator = iter(base_domain)
     base_value = next(base_iterator)
     return make_radix(base_value)
-
-
-# def build_radix(max_base, max_len):
-#     """
-#     Build a well-formed Radix domain.
-
-#     :param int max_base: maximum value for a numeric base
-#     :param int max_len: the maximum length for the component lists
-#     """
-#     base_domain = build_base(max_base)
-#     iterator = iter(base_domain)
-#     base = next(iterator)
-#     list1 = domains.List(domains.Int(min_value = 1,max_value = base-1),min_len = 0, max_len = max_len)
-#     list2 = domains.List(domains.Int(min_value = 1,max_value = base-1),min_len = 0, max_len = max_len)
-#     list3 = domains.List(domains.Int(min_value = 1,max_value = base-1),min_len = 0, max_len = max_len)
-#     if list1 == [] and list2 == [] and list3 == []:
-#         return domains.DomainPyObject(Radix,0,list1,list2,list3,base_domain)
-#     return domains.DomainPyObject(Radix,random.randrange(-1,1,2),list1,list2,list3,base_domain)
+    
 
 def build_display_config(base_config, digits_config, strip_config):
     """

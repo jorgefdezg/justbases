@@ -57,8 +57,8 @@ def test_in_base(base, radix):
     return all(x == 0 for x in radix.non_repeating_part[length:])
 
 
-@forall(base = build_base(36),n_samples = 20)
-@forall(radix = lambda base: build_radix(base,10),n_samples = 25)
+@forall(base = build_base(36),n_samples = 25)
+@forall(radix = lambda base: build_radix(base,10),n_samples = 20)
 def test_str(base,radix):
     
     #Check basic properties of __str__.
@@ -66,8 +66,8 @@ def test_str(base,radix):
     result = str(radix)
     return result.startswith("-") == (radix.sign == -1)
 
-@forall(base = build_base(1024),n_samples = 20)
-@forall(radix = lambda base: build_radix(base,10),n_samples = 25)
+@forall(base = build_base(1024),n_samples = 25)
+@forall(radix = lambda base: build_radix(base,10),n_samples = 20)
 def test_repr(base,radix):
 
     #Make sure that result is evalable.
@@ -75,10 +75,10 @@ def test_repr(base,radix):
 
 # Tests for rounding Radixes
 
-@forall(base = build_base(16),n_samples = 10)
-@forall(radix = lambda base: build_radix(base,10),n_samples = 10)
-@forall(precision = domains.Int(min_value=0, max_value=64),n_samples = 5)
-@exists(method= domains.DomainFromIterable(RoundingMethods.METHODS(),True))
+@forall(base = build_base(16),n_samples = 25)
+@forall(radix = lambda base: build_radix(base,10),
+        precision = domains.Int(min_value=0, max_value=64),
+        method= domains.DomainFromIterable(RoundingMethods.METHODS(),True),n_samples = 20)
 def test_round_fraction(base,radix, precision, method):
 
     # Test that rounding yields the correct number of digits.
@@ -103,9 +103,9 @@ def test_round_fraction(base,radix, precision, method):
     else:
         return relation == 0
 
-@forall(base = build_base(16),n_samples = 10)
-@forall(radix = lambda base: build_radix(base,10),n_samples = 5)
-@forall(precision = domains.Int(min_value=0, max_value=64),n_samples = 10)
+@forall(base = build_base(16),n_samples = 25)
+@forall(radix = lambda base: build_radix(base,10),
+        precision = domains.Int(min_value=0, max_value=64),n_samples = 20)
 def test_round_relation(base,radix, precision):
 
     #Test that all results have the correct relation.
@@ -142,9 +142,9 @@ def test_round_relation(base,radix, precision):
             return False
     return True
 
-@forall(base = build_base(64),n_samples = 20)
-@forall(radix = lambda base: build_radix(base,5),n_samples = 25)
-@exists(method= domains.DomainFromIterable(RoundingMethods.METHODS(),True))
+@forall(base = build_base(64),n_samples = 25)
+@forall(radix = lambda base: build_radix(base,5),
+        method= domains.DomainFromIterable(RoundingMethods.METHODS(),True),n_samples = 20)
 def test_as_int(base,radix, method):
     # Test equivalence with two paths.
 

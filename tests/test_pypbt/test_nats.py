@@ -32,8 +32,8 @@ from justbases import Nats
 # isort considers this third party, but it is not
 # isort:skip
 
-@forall(value = domains.Int(min_value = 0),n_samples = 10)
-@forall(to_base = domains.Int(min_value = 2),n_samples = 10)
+@forall(value = domains.Int(min_value = 0),
+        to_base = domains.Int(min_value = 2),n_samples = 500)
 def test_from_int(value, to_base):
     """
     convert_to_int(convert_from_int(value, to_base), 10) == value
@@ -44,17 +44,17 @@ def test_from_int(value, to_base):
         return False
     return Nats.convert_to_int(result, to_base) == value
 
-@forall(n = domains.Int(min_value = 2),n_samples = 5)
-@forall(nats = lambda n: domains.Tuple(domains.List(domains.Int(max_value = n-1),max_len=64),n),n_samples = 5)
-@forall(to_base = domains.Int(min_value = 2,max_value = 64),n_samples = 4)
+@forall(n = domains.Int(min_value = 2),n_samples = 20)
+@forall(nats = lambda n: domains.Tuple(domains.List(domains.Int(max_value = n-1),max_len=64),n),
+        to_base = domains.Int(min_value = 2,max_value = 64),n_samples = 25)
 def test_from_other(n,nats, to_base):
     """Test roundtrip from number in arbitrary base."""
     (subject, from_base) = nats
     result = Nats.convert(subject, from_base, to_base)
     return Nats.convert_to_int(result, to_base) == Nats.convert_to_int(subject, from_base)
 
-@forall(n = domains.Int(min_value = 2),n_samples = 10)
-@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),max_len = 5),domains.Int(min_value = 1,max_value = n-1),n),n_samples = 10)
+@forall(n = domains.Int(min_value = 2),n_samples = 25)
+@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),max_len = 5),domains.Int(min_value = 1,max_value = n-1),n),n_samples = 20)
 def test_carry_in_len(n,tupla):
     
     #Test carry_in_len.
@@ -69,8 +69,8 @@ def test_carry_in_len(n,tupla):
     return len(result2) >= len(result)
 
 
-@forall(n = domains.Int(min_value = 2),n_samples = 10)
-@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),max_len = 63),domains.Int(min_value = 1,max_value = n-1),n),n_samples = 10)
+@forall(n = domains.Int(min_value = 2),n_samples = 25)
+@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),max_len = 63),domains.Int(min_value = 1,max_value = n-1),n),n_samples = 20)
 def test_carry_in(n,tupla):
     
     #Test carry_in.
@@ -84,8 +84,8 @@ def test_carry_in(n,tupla):
 
     return (len(result2) == len(result)) or result2[0] == carry_out and result2[1:] == result
 
-@forall(n = domains.Int(min_value = 2),n_samples = 10)
-@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),max_len = 64),domains.Int(min_value = 1,max_value = n-1),n),n_samples = 10)
+@forall(n = domains.Int(min_value = 2),n_samples = 25)
+@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),max_len = 64),domains.Int(min_value = 1,max_value = n-1),n),n_samples = 20)
 def test_carry_in_len2(n,tupla):
     
     #Test carry_in.

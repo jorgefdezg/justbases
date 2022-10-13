@@ -29,7 +29,13 @@ from hypothesis import given, settings, strategies
 from justbases import Nats
 
 # isort considers this third party, but it is not
-from tests.test_hypothesis._utils import build_nat  # isort:skip
+
+#IMPORTS DEPENDING ON THE RUNNER
+# if you use pytest as runner
+#from tests.test_hypothesis._utils import build_nat 
+
+# if you use pypbt as runner
+from _utils import build_nat
 
 if sys.gettrace() is not None:
     settings.load_profile("tracing")
@@ -46,7 +52,7 @@ class NatsTestCase(unittest.TestCase):
         strategies.integers(min_value=0),
         strategies.integers(min_value=2),
     )
-    @settings(max_examples=100)
+    @settings(max_examples=500)
     def test_from_int(self, value, to_base):
         """
         convert_to_int(convert_from_int(value, to_base), 10) == value
@@ -57,7 +63,7 @@ class NatsTestCase(unittest.TestCase):
         self.assertEqual(Nats.convert_to_int(result, to_base), value)
 
     @given(_NATS_STRATEGY, strategies.integers(min_value=2, max_value=64))
-    @settings(max_examples=100)
+    @settings(max_examples=500)
     def test_from_other(self, nat, to_base):
         """Test roundtrip from number in arbitrary base."""
         (subject, from_base) = nat
@@ -76,7 +82,7 @@ class NatsTestCase(unittest.TestCase):
     )
 
     @given(_CARRY_STRATEGY)
-    @settings(max_examples=100)
+    @settings(max_examples=500)
     def test_carry_in(self, strategy):
         """
         Test carry_in.

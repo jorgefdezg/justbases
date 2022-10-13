@@ -29,7 +29,22 @@ from justbases import BaseConfig, DigitsConfig, StripConfig
 from justbases._display import Number, String, Strip
 
 # isort considers this third party, but it is not
-from tests.test_hypothesis._utils import (  # isort:skip
+
+#IMPORTS DEPENDING ON THE RUNNER
+# if you use pytest as runner
+#from tests.test_hypothesis._utils import (
+#     build_base,
+#     build_base_config,
+#     build_display_config,
+#     build_nat,
+#     build_radix,
+#     build_relation,
+#     build_sign,
+#     build_strip_config,
+# )
+
+# if you use pypbt as runner
+from _utils import (  
     build_base,
     build_base_config,
     build_display_config,
@@ -80,7 +95,7 @@ class TestNumber(unittest.TestCase):
         build_base(16),
         build_sign(),
     )
-    @settings(max_examples=504)
+    @settings(max_examples=500)
     def test_xform(
         self, integer_part, non_repeating_part, repeating_part, config, base, sign
     ):

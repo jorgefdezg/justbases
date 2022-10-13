@@ -31,8 +31,8 @@ from pypbt import domains
 from justbases import NatDivision, Nats, RoundingMethods
 
 
-@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 10)
-@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=10)
+@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 25)
+@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=20)
 def test_inverses_relation(n,tupla):
     """
     Test that division and undivision are inverses.
@@ -46,8 +46,8 @@ def test_inverses_relation(n,tupla):
     ) = NatDivision.division(divisor, dividend, base)
     return relation == 0
 
-@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 10)
-@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=10)
+@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 25)
+@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=20)
 def test_inverses_numerator1(n,tupla):
     """
     Test that division and undivision are inverses.
@@ -65,8 +65,8 @@ def test_inverses_numerator1(n,tupla):
 
     return numerator == [] or numerator[0] != 0
 
-@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 10)
-@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=10)
+@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 25)
+@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=20)
 def test_inverses_empty_denominator(n,tupla):
     """
     Test that division and undivision are inverses.
@@ -84,8 +84,8 @@ def test_inverses_empty_denominator(n,tupla):
     
     return denominator != []
 
-@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 10)
-@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=10)
+@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 25)
+@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=20)
 def test_inverses_zero_denominator(n,tupla):
     """
     Test that division and undivision are inverses.
@@ -103,8 +103,8 @@ def test_inverses_zero_denominator(n,tupla):
 
     return denominator[0] != 0
 
-@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 10)
-@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=10)
+@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 25)
+@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=20)
 def test_inverses(n,tupla):
     """
     Test that division and undivision are inverses.
@@ -129,9 +129,9 @@ def test_inverses(n,tupla):
 
     return original == result
 
-@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 4)
-@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=5)
-@forall(precision =domains.Int(min_value = 0, max_value = 32),n_samples=5)
+@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 25)
+@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),
+        precision =domains.Int(min_value = 0, max_value = 32),n_samples=20)
 def test_truncation(n,tupla, precision):
     """
     Test just truncating division result to some precision.
@@ -171,10 +171,10 @@ def test_truncation(n,tupla, precision):
         and non_repeating_part
         == (non_repeating_part_2 + repeating_part_2)[:precision])
     
-@forall(divisor = domains.Int(min_value=1,max_value=2**16),n_samples = 5)
-@forall(dividend = domains.Int(min_value=0,max_value=2**64),n_samples = 5)
-@forall(base = domains.Int(min_value=3),n_samples = 2)
-@forall(precision = domains.Int(min_value=0,max_value=32),n_samples = 2)
+@forall(divisor = domains.Int(min_value=1,max_value=2**16),
+        dividend = domains.Int(min_value=0,max_value=2**64),
+        base = domains.Int(min_value=3),
+        precision = domains.Int(min_value=0,max_value=32),n_samples = 500)
 def test_up_down(divisor, dividend, base, precision):
     """
     Test that rounding up and rounding down have the right relationship.
