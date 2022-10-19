@@ -41,20 +41,14 @@ def test_in_base(base, radix):
     non repeating part.
     """
     result = radix.in_base(base).in_base(radix.base)
-    if result.sign != radix.sign:
-        return False
-    if result.integer_part != radix.integer_part:
-        return False
-    if result.repeating_part != radix.repeating_part:
-        return False
-    if result.base != radix.base:
-        return False
-
-
     length = len(result.non_repeating_part)
-    if result.non_repeating_part != radix.non_repeating_part[:length]:
-        return False
-    return all(x == 0 for x in radix.non_repeating_part[length:])
+
+    return (result.sign == radix.sign and
+            result.integer_part == radix.integer_part and
+            result.repeating_part == radix.repeating_part and
+            result.base == radix.base and
+            result.non_repeating_part == radix.non_repeating_part[:length] and
+            all(x == 0 for x in radix.non_repeating_part[length:]))
 
 
 @forall(base = build_base(36),n_samples = 25)
@@ -66,6 +60,7 @@ def test_str(base,radix):
     result = str(radix)
     return result.startswith("-") == (radix.sign == -1)
 
+
 @forall(base = build_base(1024),n_samples = 25)
 @forall(radix = lambda base: build_radix(base,10),n_samples = 20)
 def test_repr(base,radix):
@@ -74,6 +69,7 @@ def test_repr(base,radix):
     return eval(repr(radix)) == radix
 
 # Tests for rounding Radixes
+
 
 @forall(base = build_base(16),n_samples = 25)
 @forall(radix = lambda base: build_radix(base,10),
@@ -86,22 +82,26 @@ def test_round_fraction(base,radix, precision, method):
 
     value = radix.as_rational()
     (result, relation) = radix.rounded(precision, method)
-    if len(result.non_repeating_part) != precision:
-        return False
 
     ulp = Fraction(1, radix.base**precision)
     rational_result = result.as_rational()
-    if value - ulp > rational_result:
-        return False
-    if value + ulp < rational_result:
-        return False
 
     if rational_result > value:
-        return relation == 1
+        return (len(result.non_repeating_part) == precision and
+        value - ulp <= rational_result and
+        value + ulp >= rational_result and
+        relation == 1)
     elif rational_result < value:
-        return relation == -1
+        return (len(result.non_repeating_part) == precision and
+        value - ulp <= rational_result and
+        value + ulp >= rational_result and
+        relation == -1)
     else:
-        return relation == 0
+        return (len(result.non_repeating_part) == precision and
+        value - ulp <= rational_result and
+        value + ulp >= rational_result and
+        relation == 0)
+
 
 @forall(base = build_base(16),n_samples = 25)
 @forall(radix = lambda base: build_radix(base,10),
@@ -119,18 +119,6 @@ def test_round_relation(base,radix, precision):
         if len(result.non_repeating_part) != precision:
             return False
 
-    if radix.sign in (0, 1):
-        if results[RoundingMethods.ROUND_DOWN] != results[RoundingMethods.ROUND_TO_ZERO]:
-            return False
-        
-        if results[RoundingMethods.ROUND_HALF_DOWN] != results[RoundingMethods.ROUND_HALF_ZERO]:
-            return False
-    else:
-        if results[RoundingMethods.ROUND_UP] != results[RoundingMethods.ROUND_TO_ZERO]:
-            return False
-        if results[RoundingMethods.ROUND_HALF_UP] != results[RoundingMethods.ROUND_HALF_ZERO]:
-            return False
-
     order = [
         RoundingMethods.ROUND_UP,
         RoundingMethods.ROUND_HALF_UP,
@@ -140,7 +128,18 @@ def test_round_relation(base,radix, precision):
     for index in range(len(order) - 1):
         if results[order[index]].as_rational() < results[order[index + 1]].as_rational():
             return False
-    return True
+
+    if radix.sign in (0, 1):
+        return (
+            results[RoundingMethods.ROUND_DOWN] == results[RoundingMethods.ROUND_TO_ZERO] and
+            results[RoundingMethods.ROUND_HALF_DOWN] == results[RoundingMethods.ROUND_HALF_ZERO]
+        )
+    else :
+        return (
+            results[RoundingMethods.ROUND_UP] == results[RoundingMethods.ROUND_TO_ZERO] and
+            results[RoundingMethods.ROUND_HALF_UP] == results[RoundingMethods.ROUND_HALF_ZERO]
+        )
+            
 
 @forall(base = build_base(64),n_samples = 25)
 @forall(radix = lambda base: build_radix(base,5),

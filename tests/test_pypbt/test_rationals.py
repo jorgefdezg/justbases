@@ -42,11 +42,9 @@ def test_inverses(fraction, to_base):
     #Test that functions are inverses of each other.
 
     (result, relation) = Radices.from_rational(fraction, to_base)
-    if not result.sign in (0, 1) and fraction >= 0:
-        return False
-    if relation != 0:
-        return False
-    return result.as_rational() == fraction
+    return (relation == 0 and
+            result.as_rational() == fraction and
+            result.sign in (0, 1) or value < 0)
 
 @forall(fraction = domains.DomainPyObject(Fraction, numerator = domains.Int(), denominator = domains.Int(min_value = 1,max_value = 100)),
         base = domains.Int(min_value=2, max_value=64),
@@ -59,24 +57,25 @@ def test_rounding_conversion(fraction, base, precision, method):
     
     (rounded, rel) = Radices.from_rational(fraction, base, precision, method)
     (unrounded, urel) = Radices.from_rational(fraction, base)
-    if urel != 0:
-        return False
 
     (frounded, frel) = unrounded.rounded(precision, method)
-
-    if frounded != rounded:
-        return False
-    if rel != frel:
-        return False
-
     rounded_value = rounded.as_rational()
 
     if rounded_value > fraction:
-        return rel == 1
+        return (urel == 0 and
+                frounded == rounded and
+                rel == frel and
+                rel == 1)
     elif rounded_value < fraction:
-        return rel == -1
+        return (urel == 0 and
+                frounded == rounded and
+                rel == frel and
+                rel == -1)
     else:
-        return rel == 0
+        return (urel == 0 and
+                frounded == rounded and
+                rel == frel and
+                rel == 0)
 
 
 @forall(fraction = domains.DomainPyObject(Fraction, numerator = domains.Int(), denominator = domains.Int(min_value = 1,max_value = 100)),
@@ -86,11 +85,10 @@ def test_rounding(fraction, method):
     #Test rounding to int.
     
     (result, _) = Rationals.round_to_int(fraction, method)
-    if type(result) != int:
-        return False
-
     (lower, upper) = (result - 1, result + 1)
-    return (lower <= fraction <= result) or (result <= fraction <= upper)
+
+    return (type(result) == int and
+            (lower <= fraction <= result) or (result <= fraction <= upper))
 
 @forall(numerator = domains.Int(min_value=1, max_value=9),n_samples = 500)
 def test_rounding_precise(numerator):
@@ -100,110 +98,79 @@ def test_rounding_precise(numerator):
     #pylint: disable=too-many-statements
     value = Fraction(numerator, 10)
     (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_DOWN)
-    if result != 0:
-        return False
-    if rel != -1:
+    if result != 0 or rel != -1:
         return False
 
     (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_DOWN)
-    if result != -1:
-        return False
-    if rel != -1:
+    if result != -1 or rel != -1:
         return False
 
     (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_UP)
-    if result != 1:
-        return False
-    if rel != 1:
+    if result != 1 or rel != 1:
         return False
 
     (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_UP)
-    if result != 0:
-        return False
-    if rel != 1:
+    if result != 0 or rel != 1:
         return False
 
     (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_TO_ZERO)
-    if result != 0:
-        return False
-    if rel != -1:
+    if result != 0 or rel != -1:
         return False
 
     (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_TO_ZERO)
-    if result != 0:
-        return False
-    if rel != 1:
+    if result != 0 or rel != 1:
         return False
 
     (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_HALF_UP)
     if numerator < 5:
-        if result != 0:
-            return False
-        if rel != -1:
+        if result != 0 or rel != -1:
             return False
     else:
-        if result != 1:
-            return False
-        if rel != 1:
+        if result != 1 or rel != 1:
             return False
 
     (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_HALF_UP)
     if numerator <= 5:
-        if result != 0:
-            return False
-        if rel != 1:
+        if result != 0 or rel != 1:
             return False
     else:
-        if result != -1:
-            return False
-        if rel != -1:
+        if result != -1 or rel != -1:
             return False
 
     (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_HALF_DOWN)
     if numerator > 5:
-        if result != 1:
-            return False
-        if rel != 1:
+        if result != 1 or rel != 1:
             return False
     else:
-        if result != 0:
-            return False
-        if rel != -1:
+        if result != 0 or rel != -1:
             return False
 
     (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_HALF_DOWN)
     if numerator >= 5:
-        if result != -1:
-            return False
-        if rel != -1:
+        if result != -1 or rel != -1:
             return False
     else:
-        if result != 0:
-            return False
-        if rel != 1:
+        if result != 0 or rel != 1:
             return False
 
     (result, rel) = Rationals.round_to_int(value, RoundingMethods.ROUND_HALF_ZERO)
     if numerator > 5:
-        if result != 1:
+        if result != 1 or rel != 1:
             return False
-        if rel != 1:
-            return False
+
     else:
-        if result != 0:
-            return False
-        if rel != -1:
+        if result != 0 or rel != -1:
             return False
 
     (result, rel) = Rationals.round_to_int(-value, RoundingMethods.ROUND_HALF_ZERO)
     if numerator > 5:
-        if result != -1:
-            return False
-        if rel != -1:
-            return False
+        return(
+            result == -1 and
+            rel == -1
+        )
+
     else:
-        if result != 0:
-            return False
-        if rel != 1:
-            return False
-    return True
+        return (
+            result == 0 and
+            rel == 1
+        )

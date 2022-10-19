@@ -88,5 +88,5 @@ def test_xform_strip(number, config, relation, base):
     result = Strip(config, base).xform(number, relation)
     most = Strip(StripConfig(strip=True), base).xform(number, relation)
     if config.strip and number != []:
-        return result[-1] != 0
+        return result[-1] != 0 and len(most) <= len(result)
     return len(most) <= len(result)

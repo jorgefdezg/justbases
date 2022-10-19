@@ -30,79 +30,6 @@ from pypbt import domains
 # isort: LOCAL
 from justbases import NatDivision, Nats, RoundingMethods
 
-
-@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 25)
-@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=20)
-def test_inverses_relation(n,tupla):
-    """
-    Test that division and undivision are inverses.
-    """
-    (divisor, dividend, base) = tupla
-    (
-        integer_part,
-        non_repeating_part,
-        repeating_part,
-        relation,
-    ) = NatDivision.division(divisor, dividend, base)
-    return relation == 0
-
-@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 25)
-@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=20)
-def test_inverses_numerator1(n,tupla):
-    """
-    Test that division and undivision are inverses.
-    """
-    (divisor, dividend, base) = tupla
-    (
-        integer_part,
-        non_repeating_part,
-        repeating_part,
-        relation,
-    ) = NatDivision.division(divisor, dividend, base)
-
-    (denominator, numerator) = NatDivision.undivision(
-        integer_part, non_repeating_part, repeating_part, base)
-
-    return numerator == [] or numerator[0] != 0
-
-@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 25)
-@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=20)
-def test_inverses_empty_denominator(n,tupla):
-    """
-    Test that division and undivision are inverses.
-    """
-    (divisor, dividend, base) = tupla
-    (
-        integer_part,
-        non_repeating_part,
-        repeating_part,
-        relation,
-    ) = NatDivision.division(divisor, dividend, base)
-
-    (denominator, numerator) = NatDivision.undivision(
-        integer_part, non_repeating_part, repeating_part, base)
-    
-    return denominator != []
-
-@forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 25)
-@forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=20)
-def test_inverses_zero_denominator(n,tupla):
-    """
-    Test that division and undivision are inverses.
-    """
-    (divisor, dividend, base) = tupla
-    (
-        integer_part,
-        non_repeating_part,
-        repeating_part,
-        relation,
-    ) = NatDivision.division(divisor, dividend, base)
-
-    (denominator, numerator) = NatDivision.undivision(
-        integer_part, non_repeating_part, repeating_part, base)
-
-    return denominator[0] != 0
-
 @forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 25)
 @forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),n_samples=20)
 def test_inverses(n,tupla):
@@ -127,7 +54,14 @@ def test_inverses(n,tupla):
         Nats.convert_to_int(numerator, base), Nats.convert_to_int(denominator, base)
     )
 
-    return original == result
+    return (
+        relation == 0 and
+        (numerator == [] or numerator[0] != 0) and
+        denominator != [] and
+        denominator[0] != 0 and
+        original == result
+    )
+
 
 @forall(n = domains.Int(min_value = 2, max_value = 17),n_samples = 25)
 @forall(tupla = lambda n: domains.Tuple(domains.List(domains.Int(min_value = 1,max_value = n-1),min_len = 1,max_len=4),domains.List(domains.Int(max_value = n-1),max_len=4),n),
@@ -157,19 +91,17 @@ def test_truncation(n,tupla, precision):
         rel_2,
     ) = NatDivision.division(divisor, dividend, base, None)
 
-    if rel_2 != 0:
-        return False
-    if integer_part != integer_part_2:
-        return False
-    if len(repeating_part) + len(non_repeating_part) > precision:
-        return False
-    if repeating_part_2 != repeating_part and rel != -1 :
-        return False
-
-    return not (repeating_part_2 != [] and repeating_part == []) or (
-        len(non_repeating_part) == precision
-        and non_repeating_part
-        == (non_repeating_part_2 + repeating_part_2)[:precision])
+    return (
+        rel_2 == 0 and
+        integer_part == integer_part_2 and
+        len(repeating_part) + len(non_repeating_part) <= precision and
+        (repeating_part_2 == repeating_part or rel == -1) and
+        (
+            not (repeating_part_2 != [] and repeating_part == []) or
+            (len(non_repeating_part) == precision and 
+            non_repeating_part == (non_repeating_part_2 + repeating_part_2)[:precision])
+        )
+    )
     
 @forall(divisor = domains.Int(min_value=1,max_value=2**16),
         dividend = domains.Int(min_value=0,max_value=2**64),
@@ -202,36 +134,16 @@ def test_up_down(divisor, dividend, base, precision):
         divisor, dividend, base, precision, RoundingMethods.ROUND_TO_ZERO
     )
 
-    if integer_part_2 != integer_part_3:
-        return False
-    if non_repeating_part_2 != non_repeating_part_3:
-        return False
-    if repeating_part_2 != repeating_part_3:
-        return False
-    if repeating_part == [] and repeating_part_2 != []:
-        return False
-    
-    if rel < rel_2:
-        return False
-    if rel_2 != rel_3:
-        return False
-
     round_up_int = Nats.convert_to_int(integer_part + non_repeating_part, base)
     round_down_int = Nats.convert_to_int(
         integer_part_2 + non_repeating_part_2, base
     )
 
-    if repeating_part == []:
-        if round_up_int - round_down_int > 1 and round_up_int - round_down_int < 0:
-            return False
+    if repeating_part == [] and (round_up_int - round_down_int > 1 or round_up_int - round_down_int < 0):
+        return False
 
-    if rel == 0:
-        if round_down_int != round_up_int:
-            return False
-        if rel_2 != 0:
-            return False
-        if rel_3 != 0:
-            return False
+    if rel == 0 and (round_down_int != round_up_int or rel_2 != 0 or rel_3 != 0):
+        return False
 
 
     for method in RoundingMethods.CONDITIONAL_METHODS():
@@ -242,9 +154,7 @@ def test_up_down(divisor, dividend, base, precision):
             integer_part_c + non_repeating_part_c, base
         )
         if repeating_part == []:
-            if round_down_int > rounded_int:
-                return False
-            if rounded_int > round_up_int:
+            if round_down_int > rounded_int or rounded_int > round_up_int:
                 return False
             if rel == 0:
                 return round_up_int == round_down_int
@@ -252,4 +162,12 @@ def test_up_down(divisor, dividend, base, precision):
                 return rounded_int == round_down_int
             else:
                 return rounded_int == round_up_int
-        else: return True
+
+    return (
+        integer_part_2 == integer_part_3 and
+        non_repeating_part_2 == non_repeating_part_3 and
+        repeating_part_2 == repeating_part_3 and
+        (repeating_part != [] or repeating_part_2 == []) and
+        rel >= rel_2 and
+        rel_2 == rel_3
+    )
